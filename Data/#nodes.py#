@@ -1,0 +1,72 @@
+class Node:
+    
+    def __init__(self, index, properties={}):
+        self._index = index
+        self._properties = properties
+
+    def getindex(self):
+        return self._index
+
+    def getprops(self):
+        return self._properties
+
+    def getprop(self, prop_name):
+        return self._properties[prop_name]
+
+    def setprop(self, prop_name, prop_value):
+        self._properties.update({prop_name: prop_value})
+
+class Network:
+
+    def __init__(self, nodes=[]):
+        self._nodes = nodes
+        self._indexes = [0]
+        self._updateindexes()
+
+    def _updateindexes(self):
+        self._indexes = [0]
+        for node in self._nodes:
+            self._indexes.append(int(node.getindex()))
+
+    def getnodes(self):
+        return self._nodes
+
+    def printnodes(self):
+        for node in self._nodes:
+            print(node.getindex())
+            print(node.getprops())
+        
+    def matchindex(self, index):
+        for node in self._nodes:
+            if node.getindex() == index:
+                return node
+        return False
+
+    def matchprop(self, prop_name, prop_value):
+        matches = []
+        for node in self._nodes:
+            if node.getprop(prop_name) == prop_value:
+                matches.append(node)
+        return matches
+
+    def createnode(self, props={}):
+        new_index = max(self._indexes) + 1
+        new_node = Node(index=new_index, properties=props)
+        self._nodes.append(new_node)
+        self._updateindexes()
+        return new_node
+
+
+        
+
+    
+    
+    
+
+
+
+    
+        
+        
+        
+    

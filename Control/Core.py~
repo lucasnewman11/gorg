@@ -1,0 +1,46 @@
+import sys, types
+from PyQt4.QtCore import Qt, QObject, pyqtSignal
+from PyQt4.QtGui import QKeySequence, QWidget
+from Control.Keymaps import Keymap
+
+class Commander(QWidget):
+    # the top level controller class
+
+    def __init__(self, keymap):
+        super(Commander, self).__init__()
+        self._default_keymap = keymap
+        self._current_keymap = self._default_keymap
+        self._currently_pressed_keys = []
+
+    def _convert_key_to_gkey(self, key):
+        if key == Qt.Key_Meta:
+            return "C-"
+        elif key == Qt.Key_Alt:
+            return "M-"
+        else:
+            return chr(key)
+        
+    def process_gorg_key_signal(self, typ, key, gte):
+        gkey = self._convert_key_to_gkey(key)
+        if typ == "p":
+            self._currently_pressed_keys.append(gkey)
+            self.invoke(gte)
+        elif typ == "r":
+            self._currently_pressed_keys.remove(gkey)
+
+    def _process_full_key_event(self):
+        print(self._currently_pressed_keys)
+        event = "".join(self._currently_pressed_keys)
+        print(event)
+        return(event)
+        
+    def invoke(self, gte):
+        match = self._current_keymap.match(self._process_full_key_event())
+        print(self._current_keymap._dict)
+        if match:
+            if type(match) == Keymap:
+                self._current_keymap = match
+            elif type(match) == types.FunctionType:
+                match.__call__(gte)
+                self._current_keymap = self._default_keymap
+        

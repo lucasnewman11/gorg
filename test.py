@@ -1,0 +1,28 @@
+import sys
+from PyQt4.QtCore import Qt, pyqtSignal
+from PyQt4 import QtGui
+import Data.Stores
+import View.Gates
+import Control.Core
+import Control.Keymaps
+
+# creates a gorg directory object which points to an existing directory of JSON gorg data
+gorg_directory = Data.Stores.JSONDir("/Users/amodeo/Dropbox/gorg-data/")
+
+# calls the 'getlast' method on the gorg directory to return a live gorg network
+gorg_network = gorg_directory.getlast()
+
+# stores the current gorg network to the current gorg directory
+# gorg_directory.store(gorg_network)
+
+# current app 
+Gorg = QtGui.QApplication(sys.argv)
+frame1 = View.Gates.Frame()
+keymap = Control.Keymaps.make_keymap_from_file(open("Control/keymaps.txt", "r"))
+commander1 = Control.Core.Commander(keymap)
+frame1.gorg_key_press_signal.connect(commander1.process_gorg_key_signal)
+frame1.gorg_key_release_signal.connect(commander1.process_gorg_key_signal)
+sys.exit(Gorg.exec_())
+
+
+

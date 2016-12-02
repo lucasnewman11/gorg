@@ -1,0 +1,6 @@
+(map Main)
+(map Other)
+(bindcom Main C-H hello)
+(bindcom Main [a-zA-Z] insert_character)
+(bindmap Main C-J Other)
+(bindcom Other H hi)

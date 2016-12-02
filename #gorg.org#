@@ -1,0 +1,87 @@
+Content-Type: text/enriched
+Text-Width: 70
+
+* Class Reference
+<x-color><param>white</param>*</x-color>* gorg.data
+<x-color><param>white</param>**</x-color>* gorg.data.nodes
+<x-color><param>white</param>***</x-color>* [[file:data/nodes.py::class%20Node:][gorg.data.nodes.Node]]
+
+<x-color><param>white</param>****</x-color>* methods
+<x-color><param>white</param>*****</x-color>* __init__
+- constructor function
+
+- initialized with an index number and an optional property dictionary 
+
+<x-color><param>white</param>*****</x-color>* getindex
+
+- used for getting the index number of the node
+
+<x-color><param>white</param>*****</x-color>* getprops
+
+- used for getting the complete dictionary of node properties
+
+<x-color><param>white</param>*****</x-color>* getprop
+
+- used for querying the value of a specific property
+
+<x-color><param>white</param>*****</x-color>* setprop
+
+- used for overwriting a new key and value to the node properties
+
+<x-color><param>white</param>****</x-color>* usage
+
+- Nodes are the atomic storage unit of gorg data.
+
+- Each node is a member of a Network, and has a unique index number within that network.
+- Apart from the unique index number, nodes are basically just dictionaries of properties.
+
+
+<x-color><param>white</param>***</x-color>* [[file:data/nodes.py::class%20Network:][gorg.data.nodes.Network]]
+
+<x-color><param>white</param>****</x-color>* methods
+
+<x-color><param>white</param>*****</x-color>* __init__
+
+<x-color><param>white</param>*****</x-color>* getnodes
+
+returns a list of all the Node objects in the network
+
+<x-color><param>white</param>*****</x-color>* printnodes
+
+prints a representation of all the nodes in the network
+
+<x-color><param>white</param>*****</x-color>* matchindex
+
+returns the node matching a specific index number
+
+<x-color><param>white</param>*****</x-color>* matchprop
+
+returns a list of node objects matching a specific property and value pairing
+
+<x-color><param>white</param>*****</x-color>* createnode
+
+adds a brand new node to the network, and returns it
+
+
+<x-color><param>white</param>**</x-color>* gorg.data.stores
+
+<x-color><param>white</param>***</x-color>* [[file:data/stores.py::class%20JSONDir(StoreHouse):][gorg.data.stores.JSONDir]]
+
+<x-color><param>white</param>****</x-color>* __init__
+
+- constructor function
+- accepts as argument a string specifying the path of the directory
+
+<x-color><param>white</param>****</x-color>* getlast
+
+returns the network most recently stored in the directory
+
+<x-color><param>white</param>****</x-color>* store
+
+stores a network to the directory
+
+
+<x-color><param>white</param>*</x-color>* gorg.view
+
+* Journal
+

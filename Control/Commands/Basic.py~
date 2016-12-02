@@ -1,0 +1,6 @@
+def hello(gte):
+    gte.insertPlainText("hello")
+
+def hi(gte):
+    gte.insertPlainText("hiiiiiiiiiiiiiiiiiiiii")
+    
