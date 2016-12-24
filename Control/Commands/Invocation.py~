@@ -1,0 +1,10 @@
+def invoke_command(gte, fke):
+    gte.parent().parent().getminibuffer().insert("M-x")
+
+class Completor():
+
+    def __init__(self, list_of_strings):
+
+        
+
+    

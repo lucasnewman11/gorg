@@ -14,9 +14,27 @@ class Commander(QWidget):
 
     def _convert_key_to_gkey(self, key):
         if key == Qt.Key_Meta:
-            return "C-"
+            return "Ctrl"
         elif key == Qt.Key_Alt:
-            return "M-"
+            return "Meta"
+        elif key == Qt.Key_Escape:
+            return "Esc"
+        elif key == Qt.Key_Return:
+            return "Ret"
+        elif key == Qt.Key_Delete:
+            return "Del"
+        elif key == Qt.Key_Backspace:
+            return "Bkspc"
+        elif key == Qt.Key_Tab:
+            return "Tab"
+        elif key == Qt.Key_Shift:
+            return "Shft"
+        elif key == Qt.Key_CapsLock:
+            return "CpsL"
+        elif key == Qt.Key_Control:
+            return "Cmnd"
+        elif key == Qt.Key_Space:
+            return "Spc"
         else:
             return chr(key)
         
@@ -25,23 +43,29 @@ class Commander(QWidget):
         if typ == "p":
             if gkey not in self._currently_pressed_keys:
                 self._currently_pressed_keys.append(gkey)
-                self.invoke(key, gte)
+                print("Added:", key)
+                self.invoke(gte)
+            else:
+                self.invoke(gte)
         elif typ == "r":
+            print("Removed:", key)
             self._currently_pressed_keys.remove(gkey)
 
     def _process_full_key_event(self):
         print(self._currently_pressed_keys)
-        event = "".join(self._currently_pressed_keys)
-        print(event)
-        return(event)
+        if self._currently_pressed_keys[0] in ("Ctrl", "Meta", "Shft", "Cmnd"):
+            event_string = "-".join(self._currently_pressed_keys)
+        else:
+            event_string = self._currently_pressed_keys[-1]
+        return(event_string)
         
-    def invoke(self, key, gte):
-        match = self._current_keymap.match(self._process_full_key_event())
-        print(self._current_keymap._dict)
+    def invoke(self, gte):
+        full_key_event = self._process_full_key_event()
+        match = self._current_keymap.match(full_key_event)
         if match:
             if type(match) == Keymap:
                 self._current_keymap = match
             elif type(match) == types.FunctionType:
-                match.__call__(key, gte)
+                match.__call__(gte, full_key_event)
                 self._current_keymap = self._default_keymap
         

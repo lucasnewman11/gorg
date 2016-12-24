@@ -2,7 +2,6 @@ import Control.Commands
 import re
 
 class Keymap():
-    
     def __init__(self):
         self._dict = {}
 
@@ -14,8 +13,9 @@ class Keymap():
         print("String:" + string)
         final_match = False
         for i in self._dict:
-            if i.match(string):
+            if i.fullmatch(string): # method on the regex object
                 final_match = i
+                print("final_match:", final_match)
         if final_match:
             return self._dict[final_match]
         else:
@@ -27,6 +27,7 @@ def make_keymap_from_file(fyl):
     keymaps = {}
     for line in fyl:
         token_list = line[1:-2].split()
+        print("TOKEN LIST:", token_list)
         fun = token_list[0]
         args = token_list[1:]
         if fun == "map":
