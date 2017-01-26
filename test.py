@@ -2,7 +2,7 @@ import sys
 from PyQt4.QtCore import Qt, pyqtSignal
 from PyQt4 import QtGui
 import Data.Stores
-import View.Frames
+import View.Gates
 import Control.Core
 import Control.Keymaps
 
@@ -17,7 +17,7 @@ gorg_network = gorg_directory.getlast()
 
 # current app 
 Gorg = QtGui.QApplication(sys.argv)
-frame1 = View.Frames.Frame()
+frame1 = View.Gates.Frame()
 keymap = Control.Keymaps.make_keymap_from_file(open("Control/keymaps.txt", "r"))
 commander1 = Control.Core.Commander(keymap)
 frame1.gorg_key_press_signal.connect(commander1.process_gorg_key_signal)

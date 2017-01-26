@@ -1,1 +1,0 @@
-{"Simple_Text": {"order": ["body"], "keymap": "Blank", "body": {"keymap": "Basic", "underline": "False", "read-only": "False", "color": "black", "bold": "False", "italics": "False", "text": ""}}}
