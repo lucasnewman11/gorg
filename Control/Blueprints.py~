@@ -1,0 +1,4 @@
+import json
+
+def make_blueprints_dict_from_file(fyl):
+    return json.load(fyl)
