@@ -1,15 +1,60 @@
 import sys, types
 from PyQt4.QtCore import Qt, QObject, pyqtSignal
-from PyQt4.QtGui import QKeySequence, QWidget
+from PyQt4 import QtGui
 from Control.Keymaps import Keymap
+import View
+import Data
 
-class Commander(QWidget):
+class Commander():
     # the top level controller class
 
-    def __init__(self, keymap):
+    def __init__(self, keymaps_dict, blueprints_dict):
         super(Commander, self).__init__()
-        self._default_keymap = keymap
-        self._current_keymap = self._default_keymap
+
+        # initialize basics
+        self._keymaps = keymaps_dict
+        self._blueprints = blueprints_dict
+        self._handler = KeyEventHandler()
+        self._invoker = Control.Keymaps.Invoker(self._keymaps["Top"])
+        self._windows = {}
+        self._interfaces = {}
+        self._window_assignments = {}
+        self._initUI
+        # connect slot
+
+    def _initUI(self):
+        self._frame = View.Frames.Frame()
+        self._frame.gorg_key_event_signal.connect(self._gorg_key_event)
+
+        start_window = self._frame.get_window("AAAA")
+        start_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
+        self.add_window("AAAA", start_window)
+        self.add_interface("start", start_interface)
+        self.assign_window(start_window, start_interface)
+        
+    def add_window(self, name, window):
+        self._windows[name] = window
+
+    def add_interface(self, name, interface):
+        self._interfaces[name] = interface
+
+    def assign_window(self, window, interface):
+        self._window_assignments[window] = interface        
+
+    def _gorg_key_event(self, gke):
+        fks = self._handler.process_gorg_key_event(gke)
+        if gke.typ == "p":
+            fke = FullKeyEvent(gke, fks, self)
+            self.process_full_key_event(fke, pos, win)
+
+    def process_full_key_event(self, fke):
+        if not self._invoker.match_key_event(fke):
+            target_interface = self._window_assignments[fke.gke.win]
+            target_interface.process_full_key_event(fke)
+
+class KeyEventHandler():
+
+    def __init__(self):
         self._currently_pressed_keys = []
 
     def _convert_key_to_gkey(self, key):
@@ -38,34 +83,34 @@ class Commander(QWidget):
         else:
             return chr(key)
         
-    def process_gorg_key_signal(self, typ, key, gte):
-        gkey = self._convert_key_to_gkey(key)
-        if typ == "p":
-            if gkey not in self._currently_pressed_keys:
-                self._currently_pressed_keys.append(gkey)
-                print("Added:", key)
-                self.invoke(gte)
-            else:
-                self.invoke(gte)
-        elif typ == "r":
-            print("Removed:", key)
-            self._currently_pressed_keys.remove(gkey)
-
-    def _process_full_key_event(self):
-        print(self._currently_pressed_keys)
+    def _get_full_key_string(self):
         if self._currently_pressed_keys[0] in ("Ctrl", "Meta", "Shft", "Cmnd"):
             event_string = "-".join(self._currently_pressed_keys)
         else:
             event_string = self._currently_pressed_keys[-1]
+
         return(event_string)
-        
-    def invoke(self, gte):
-        full_key_event = self._process_full_key_event()
-        match = self._current_keymap.match(full_key_event)
-        if match:
-            if type(match) == Keymap:
-                self._current_keymap = match
-            elif type(match) == types.FunctionType:
-                match.__call__(gte, full_key_event)
-                self._current_keymap = self._default_keymap
+
+    def process_gorg_key_event(self, gke):
+        key = gke.key
+        typ = gke.typ
+        gkey = self._convert_key_to_gkey(key)
+        if typ == "p":
+            if gkey not in self._currently_pressed_keys:
+                self._currently_pressed_keys.append(gkey)
+        elif typ == "r":
+            print("Removed:", key)
+            self._currently_pressed_keys.remove(gkey)
+
+        return self._get_full_key_string()
+
+
+class FullKeyEvent():
+
+    def __init__(self, gke, string, commander, inter=False, gate=False):
+        self.gke = gke
+        self.string = string
+        self.commander = commander
+        self.inter = inter
+        self.gate = gate
         
