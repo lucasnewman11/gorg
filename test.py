@@ -5,6 +5,7 @@ import Data.Stores
 import View.Frames
 import Control.Core
 import Control.Keymaps
+import Control.Interfaces
 
 # creates a gorg directory object which points to an existing directory of JSON gorg data
 gorg_directory = Data.Stores.JSONDir("/Users/amodeo/Dropbox/gorg-data/")
@@ -17,11 +18,9 @@ gorg_network = gorg_directory.getlast()
 
 # current app 
 Gorg = QtGui.QApplication(sys.argv)
-frame1 = View.Frames.Frame()
-keymap = Control.Keymaps.make_keymap_from_file(open("Control/keymaps.txt", "r"))
-commander1 = Control.Core.Commander(keymap)
-frame1.gorg_key_press_signal.connect(commander1.process_gorg_key_signal)
-frame1.gorg_key_release_signal.connect(commander1.process_gorg_key_signal)
+keymaps = Control.Keymaps.make_keymaps_dict_from_file(open("Control/keymaps.txt", "r"))
+blueprints = Control.Interfaces.make_blueprints_dict_from_file(open("Control/blueprints.txt", "r"))
+commander1 = Control.Core.Commander(keymaps, blueprints)
 sys.exit(Gorg.exec_())
 
 

@@ -13,7 +13,7 @@ class Invoker():
             if type(match) == Keymap:
                 self._current_keymap = match
             else:
-                self.invoke(match)
+                self.invoke(match, fke)
             return True
         else:
             return False
@@ -21,7 +21,6 @@ class Invoker():
     def invoke(self, fun, fke):
         # I need to write a line of code here which goes and calculates the args to be passed into the function
         fun.__call__(fke)
-        fke.gke.win.doc.update_view()
         
 class Keymap():
     def __init__(self):
@@ -48,7 +47,6 @@ def make_keymaps_dict_from_file(fyl):
     keymaps = {}
     for line in fyl:
         token_list = line[1:-2].split()
-        print("TOKEN LIST:", token_list)
         fun = token_list[0]
         args = token_list[1:]
         if fun == "map":

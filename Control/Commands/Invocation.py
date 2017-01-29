@@ -1,4 +1,4 @@
-def invoke_command(gte, fke):
+def invoke_command(fke):
     gte.parent().parent().getminibuffer().insert("M-x")
     import inspect
     import Control.Commands
