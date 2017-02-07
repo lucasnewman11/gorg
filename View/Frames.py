@@ -11,7 +11,6 @@ class GorgKeyEvent():
         self.win = win
         self.frame = frame
 
-
 class AlphaNamer():
 
     def __init__(self, length):
@@ -49,116 +48,40 @@ class Frame(QtGui.QWidget):
     
     def __init__(self):
         super(Frame, self).__init__()
-        self._lattice = Lattice()
-        self.setLayout(self._lattice)
-
-        self._loc_from_obj = {}
-        self._obj_from_name = {}
-        self._name_from_obj = {}
+        self.grid = Lattice()
+        self.grid.gorg_key_event_signal.connect(self._gorg_key_event)
+        self.setLayout(self.grid)
 
         self._namer = AlphaNamer(5)
+        self._init_UI()
 
     def _init_UI(self):
         
-        start_window = Window("AAAA")
-        self._add_window(start_window, self._last_name, (1,1))
+        start_window = Window()
+        self.grid.place_obj(start_window, "AAAAA", (1,1))
 
-        miniwindow = MiniWindow("mini")
-        self._add_window(miniwindow, "mini", (2,1))
+        miniwindow = MiniWindow()
+        self.grid.place_obj(miniwindow, "MINI", (2,1))
 
         # set up presentation
-        self._lattice.setHorizontalSpacing(0)
-        self._lattice.setVerticalSpacing(0)
+        self.grid.setHorizontalSpacing(0)
+        self.grid.setVerticalSpacing(0)
         self.setGeometry(300, 300, 350, 300)
         self.setWindowTitle('Gorg')
         self.show()
 
         # accessing and placing objects at Frame level
-    def obj_from_name(self, name):
-        return self._obj_from_name[name]
-
-    def name_from_obj(self, obj):
-        return self._name_from_obj[obj]
-
-    def loc_from_object(self, obj):
-        return self._loc_from_obj[obj]
-
-    def _add_obj(self, obj, name, loc):
-        self._obj_from_name[name] = obj
-        self._name_from_obj[obj] = name
-        self._loc_from_obj[obj] = loc
-        self._lattice.addObject(obj, name, loc)
-        obj.gorg_key_event_signal.connect(self._gorg_key_event)
-
-    def _remove_obj(self, obj):
-        name = self._name_from_obj[obj]
-        del self._obj_from_name[name]
-        del self._name_from_obj[obj]
-        del self._loc_from_obj[obj]
-        if type(obj) == Window:
-            self._lattice.removeWidget(obj)
-        elif type(obj) == Lattice:
-            self._lattice.removeItem(obj)
-
-        # accessing and placing objects through the hierarchy
-
-    def obj_from_path(self, path):
-        path_list = path.split("/")
-        if len(path_list) == 1:
-            return self.obj_from_name(path_list[0])
-        else:
-            latt = self.obj_from_name(path_list[0])
-            new_path = "/".join(path_list[1:])
-            return latt.obj_from_path(new_path)
-        
-    def place_obj(self, obj, path, loc):
-        path_list = path.split("/")
-        if len(path_list) == 1:
-            self._add_obj(obj, path_list[0], loc)
-        else:
-            latt = self.obj_from_name(path_list[0])
-            new_path = "/".join(path_list[1:])
-            latt.place_obj(obj, new_path, loc)
 
     def path(self):
         return False
-
-    def split_window(self, window, ori):
-        # accepts a window, and the orientation of the split.  ori should be a string of either "v" or "h" for vertical or horizontal
-
-        loc = window.parent().loc_from_object(window)
-        path = window.path()
-
-        path = target_window["path"]
-        path_list = path.split("/")
-        grid = self._lattice
-        for i in path_list:
-            if i:
-                grid = grid.obj_by_name(i)
-        grid.removeWidget(obj)            
-
-        new_lattice = Lattice()
-        new_lattice.addWindow(obj, window_name, (1, 1))
-        lattice_name = self._new_name()
-        grid.addLattice(new_lattice, lattice_name, loc)
-
-        new_name = self._new_name()        
-        new_window = Window(new_name)
-        if ori == "v":
-            self._add_window(new_window, self._new_name(), (1, 2), path + "/" + lattice_name)
-        elif ori == "h":
-            self._add_window(new_window, self._new_name(), (2, 1), path + "/" + lattice_name)
-        else:
-            print("Not a valid splitting orientation.")
-            raise ValueError
-
-        return new_name
 
     def _gorg_key_event(self, gke):
         gke.frame = self
         self.gorg_key_event_signal.emit(gke)
 
 class Lattice(QtGui.QGridLayout):
+
+    gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
 
     def __init__(self):
         super(Lattice, self).__init__()
@@ -173,21 +96,26 @@ class Lattice(QtGui.QGridLayout):
         return self._name_from_obj[obj]
 
     def loc_from_object(self, obj):
+        print(self._loc_from_obj)
         return self._loc_from_obj[obj]
 
     def _add_obj(self, obj, name, loc):
         self._obj_from_name[name] = obj
         self._name_from_obj[obj] = name
         self._loc_from_obj[obj] = loc
-        if type(obj) == Window:
+        print("OBJ", type(obj))
+        print("CLASS", Window, MiniWindow, Lattice)
+        if type(obj) in (Window, MiniWindow):
             self.addWidget(obj, loc[0], loc[1])
         elif type(obj) == Lattice:
             self.addLayout(obj, loc[0], loc[1])
         else:
             print("Object must be a Window or a Lattice.")
             raise TypeError
+        obj.gorg_key_event_signal.connect(self._gorg_key_event)
+        obj.setParent(self)
 
-    def _remove_obj(self, obj):
+    def remove_obj(self, obj):
         name = self._name_from_obj[obj]
         del self._obj_from_name[name]
         del self._name_from_obj[obj]
@@ -218,22 +146,25 @@ class Lattice(QtGui.QGridLayout):
 
     def path(self):
         myname = self.parent().name_from_obj(self)
-        parent_path = self.parent().path():
+        parent_path = self.parent().path()
         if parent_path:
             mypath = "/".join(parent_path, myname)
         else:
             mypath = myname
         return mypath
 
+    def _gorg_key_event(self, gke):
+        print("YEAH") 
+        self.gorg_key_event_signal.emit(gke)
+
 class Window(QtGui.QFrame):
     # a custom QT class derived from a QFrame, consisting of a paired QTextEdit object and QLabel object.  Together, they display the contents and name of a Buffer object.  constructor accepts a buffer object
 
     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
 
-    def __init__(self, name):
+    def __init__(self):
         super(Window, self).__init__()
         # initialize layout
-        self.name = name
         self.doc = GorgTextEdit()
         self.setContentsMargins(0, 0, 0, 0)
         self._statusbar = QtGui.QLabel()
@@ -251,7 +182,7 @@ class Window(QtGui.QFrame):
 
     def path(self):
         myname = self.parent().name_from_obj(self)
-        parent_path = self.parent().path():
+        parent_path = self.parent().path()
         if parent_path:
             mypath = "/".join(parent_path, myname)
         else:
@@ -263,10 +194,9 @@ class MiniWindow(QtGui.QFrame):
 
     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
 
-    def __init__(self, name):
+    def __init__(self):
         super(MiniWindow, self).__init__()
         # initialize layout
-        self.name = name
         self.doc = GorgTextEdit()
         self.doc.setMaximumHeight(16)
         self.setContentsMargins(0, 0, 0, 0)
@@ -283,7 +213,7 @@ class MiniWindow(QtGui.QFrame):
 
     def path(self):
         myname = self.parent().name_from_obj(self)
-        parent_path = self.parent().path():
+        parent_path = self.parent().path()
         if parent_path:
             mypath = "/".join(parent_path, myname)
         else:

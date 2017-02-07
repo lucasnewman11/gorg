@@ -23,21 +23,21 @@ class Commander():
         # connect slot
 
     def _initUI(self):
-        self._frame = View.Frames.Frame()
-        self._frame.gorg_key_event_signal.connect(self._gorg_key_event)
+        self.frame = View.Frames.Frame()
+        self.frame.gorg_key_event_signal.connect(self._gorg_key_event)
 
         start_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
         self.add_interface("start", start_interface)
 
-        start_window = self._frame.get_window("AAAA")["obj"]
-        miniwindow = self._frame.get_window("mini")["obj"]
-        self.add_window("AAAA", start_window)
-        self.add_window("mini", miniwindow)
+        start_window = self.frame.grid.obj_from_name("AAAAA")
+        miniwindow = self.frame.grid.obj_from_name("MINI")
+        self.add_window("AAAAA", start_window)
+        self.add_window("MINI", miniwindow)
         
         self.assign_window(start_window, start_interface)
         self.assign_window(miniwindow, start_interface)
 
-        self._frame.show()
+        self.frame.show()
     def add_window(self, name, window):
         self._windows[name] = window
 
