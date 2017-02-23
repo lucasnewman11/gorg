@@ -3,6 +3,7 @@
 (map Basic_Text)
 (bindcom Top Ctrl-2 split_window_horizontal)
 (bindcom Top Ctrl-3 split_window_vertical)
+(bindcom Top Ctrl-4 change_window_focus)
 (bindcom Basic_Text Ctrl-H hello)
 (bindcom Basic_Text (Shft-)?[!-~] insert_character)
 (bindcom Basic_Text Spc insert_space)

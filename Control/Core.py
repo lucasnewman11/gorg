@@ -29,8 +29,8 @@ class Commander():
         start_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
         self.add_interface("start", start_interface)
 
-        start_window = self.frame.grid.obj_from_name("AAAAA")
-        miniwindow = self.frame.grid.obj_from_name("MINI")
+        start_window = self.frame.obj_from_path("TOP/AAAAA")
+        miniwindow = self.frame.obj_from_path("TOP/MINI")
         self.add_window("AAAAA", start_window)
         self.add_window("MINI", miniwindow)
         
@@ -48,7 +48,7 @@ class Commander():
         self._window_assignments[window] = interface
 
     def get_interface(self, window):
-        return self._windows_assignments[window]
+        return self._window_assignments[window]
 
     def _gorg_key_event(self, gke):
         fks = self._handler.process_gorg_key_event(gke)
@@ -117,7 +117,6 @@ class KeyEventHandler():
             if gkey not in self._currently_pressed_keys:
                 self._currently_pressed_keys.append(gkey)
         elif typ == "r":
-            print("Removed:", key)
             self._currently_pressed_keys.remove(gkey)
 
         return self._get_full_key_string()

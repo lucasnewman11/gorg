@@ -31,16 +31,13 @@ class Keymap():
         self._dict[key_string] = dest
 
     def match(self, string):
-        print("String:" + string)
         final_match = False
         for i in self._dict:
             if i.fullmatch(string): # method on the regex object
                 final_match = i
-                print("final_match:", final_match)
         if final_match:
             return self._dict[final_match]
         else:
-            print("No match for that key in this map.")
             return False
 
 def make_keymaps_dict_from_file(fyl):

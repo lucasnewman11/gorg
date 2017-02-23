@@ -1,9 +1,6 @@
 def _insert_text(gate, pos, addition):
-    print("Addition:", addition)
     text_list = list(gate.get_raw_text())
-    print("Text list", text_list)
     text_list.insert(pos, addition)
-    print("New list", text_list)
     new_string = "".join(text_list)
     gate.set_raw_text(new_string)
 
@@ -18,7 +15,7 @@ def insert_character(fke):
         _insert_text(fke.gate, fke.gate_adjusted_pos, string.lower())
 
 def insert_space(fke):
-    _insert_text(fke.gate, fke.adjusted_pos, " ")
+    _insert_text(fke.gate, fke.gate_adjusted_pos, " ")
 
 def _delete_selection(fke, selection_dict):
     adjusted_start = selection_dict["start"] - fke.gate_start_pos
@@ -34,7 +31,6 @@ def _delete_char(fke):
     
 def delete(fke):
     selection_dict = fke.gke.win.doc.get_selection()
-    print(selection_dict)
     if len(selection_dict["string"]) > 0:
         _delete_selection(fke, selection_dict)
     else:

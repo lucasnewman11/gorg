@@ -28,7 +28,6 @@ class Interface():
 
     def get_gate_by_pos(self, pos):
         num = 0
-        print(num)
         for i in self._order:
             gate = self._gates[i]
             length = gate.get_len()
