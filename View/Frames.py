@@ -7,8 +7,8 @@ class GorgKeyEvent():
     def __init__(self, typ, key, pos, win=False, frame=False):
         self.typ = typ
         self.key = key
-        self.pos = pos
         self.win = win
+        self.pos = pos
         self.frame = frame
 
 class AlphaNamer():
@@ -58,7 +58,6 @@ class Frame(QtGui.QWidget):
         self._name_from_obj = {}
         self._obj_from_name = {}
 
-
         top = Lattice()
         self.place_obj(top, "TOP", (1,1))
 
@@ -75,7 +74,7 @@ class Frame(QtGui.QWidget):
 
         # set up presentation
 
-        self.setGeometry(300, 300, 350, 300)
+        self.setGeometry(600, 600, 700, 600)
         self.setWindowTitle('Gorg')
         self.show()
 
@@ -313,81 +312,6 @@ class MiniWindow(QtGui.QWidget):
     def get_sub_paths(self):
         return False
 
-
-# class GorgLineEdit(QtGui.QLineEdit):
-# # the framing and content class for the minibuffer, which contains the GorgLineEdit object and the buffer that populates it.  constructor takes a buffer.
-
-#     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
-    
-#     def __init__(self):
-#         super(GorgLineEdit, self).__init__()
-
-#     def insertPlainText(self, QString):
-#         self.insert(QString)
-
-#     def get_selection(self):
-#         string = self.selectedText()
-#         start = self.selectionStart()
-#         end = start + len(string)
-#         selection = {"string": string,
-#                      "start": start,
-#                      "end": end}
-#         return selection
-
-#     def _select_text(self, start, end):
-#         length = end - start
-#         self.setSelection(start, length)
-        
-#     def _update_selected_text_properties(self, prop_dict):
-#         # sets color
-#         colors = {"black": Qt.black,
-#                   "white": Qt.white,
-#                   "red": Qt.red,
-#                   "blue": Qt.blue,
-#                   "cyan": Qt.cyan,
-#                   "magenta": Qt.magenta,
-#                   "yellow": Qt.yellow,
-#                   "green": Qt.green}
-#         text_color = QtGui.QColor(colors[prop_dict["color"]])
-#         self.setTextColor(text_color)
-
-#         # sets bold
-#         if prop_dict["bold"] == True:
-#             self.setFontWeight(75)
-#         else:
-#             self.setFontWeight(50)
-
-#         # sets italic
-#         if prop_dict["italics"] == True:
-#             self.setFontItalic(True)
-#         else:
-#             self.setFontItalic(False)
-
-#         #sets underline
-#         if prop_dict["underline"] == True:
-#             self.setFontUnderline(True)
-#         else:
-#             self.setFontUnderline(False)
-        
-#     def update_view(self, interface):
-#         self.clear()
-#         text_list = interface.get_full_text()
-#         for i in text_list:
-#             length = len(i[0])
-#             self.insertPlainText(i[0])
-#             self._select_text(self.cursorPosition() - length, self.cursorPosition())
-#             self._update_selected_text_properties(i[1])
-#             self.deselect()
-
-#     def keyPressEvent(self, e):
-#         gke = GorgKeyEvent("p", e.key(), self.cursorPosition())
-#         self.gorg_key_event_signal.emit(gke)
-     
-#     def keyReleaseEvent(self, e):
-#         gke = GorgKeyEvent("r", e.key(), self.cursorPosition())
-#         self.gorg_key_event_signal.emit(gke)
-
-
 class GorgTextEdit(QtGui.QTextEdit):
     # customized QTextEdit class, initialized with a Gate object
 
@@ -396,15 +320,7 @@ class GorgTextEdit(QtGui.QTextEdit):
     def __init__(self):
         super(GorgTextEdit, self).__init__()
         self._cursor = self.textCursor()
-
-    def get_selection(self):
-        string = self._cursor.selectedText()
-        start = self._cursor.selectionStart()
-        end = self._cursor.selectionEnd()
-        selection = {"string": string,
-                     "start": start,
-                     "end": end}
-        return selection
+        self._last_selection = {}
 
     def _select_text(self, start, end):
         self._cursor.setPosition(start)
@@ -451,6 +367,13 @@ class GorgTextEdit(QtGui.QTextEdit):
             self._select_text(pos - length, pos)
             self._update_selected_text_properties(i[1])
             self._cursor.clearSelection()
+        focus = interface.getfocus()
+        if focus.cursor().is_mark_active():
+            self._cursor.setPosition(focus.cursor().mark())
+            self._cursor.setPosition(focus.cursor().point(), 1)
+        else:
+            self._cursor.setPosition(focus.cursor().point())
+        self.setTextCursor(self._cursor)
         
     def keyPressEvent(self, e):
         gke = GorgKeyEvent("p", e.key(), self._cursor.position())
@@ -459,8 +382,6 @@ class GorgTextEdit(QtGui.QTextEdit):
     def keyReleaseEvent(self, e):
         gke = GorgKeyEvent("r", e.key(), self._cursor.position())
         self.gorg_key_event_signal.emit(gke)
-
-
 
 def main():
     

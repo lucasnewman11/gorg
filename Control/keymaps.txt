@@ -10,3 +10,7 @@
 (bindcom Basic_Text Bkspc delete)
 (bindcom Basic_Text Ret insert_new_line)
 (bindcom Basic_Text Meta-X invoke_command)
+(bindcom Basic_Text Ctrl-F advance_point_by_char)
+(bindcom Basic_Text Ctrl-B retreat_point_by_char)
+(bindcom Basic_Text Meta-F advance_point_by_word)
+(bindcom Basic_Text Ctrl-Spc set_mark)

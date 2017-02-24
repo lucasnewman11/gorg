@@ -9,11 +9,18 @@ class Interface():
         self._invoker = False
         self._gates = {}
         self._order = []
+        self._focus = False
 
+    def setfocus(self, gate):
+        self._focus = gate
+
+    def getfocus(self):
+        return self._focus
+        
     def add_gate(self, name):
         self._gates[name] = Gate()
         self._order.append(name)
-
+        
     def set_invoker(self, invoker):
         self._invoker = invoker
 
@@ -38,11 +45,13 @@ class Interface():
     def process_full_key_event(self, fke):
         fke.inter = self
         if not self._invoker.match_key_event(fke):
-            gate, starting_pos = self.get_gate_by_pos(fke.gke.pos)
-            adjusted_pos = fke.gke.pos - starting_pos
+            point = fke.gke.pos
+            gate, starting_pos = self.get_gate_by_pos(point)
+            adjusted_pos = point - starting_pos
             fke.gate_start_pos = starting_pos
             fke.gate_adjusted_pos = adjusted_pos
             gate.process_full_key_event(fke)
+            self.setfocus(gate)
         
 class Gate():
 
@@ -50,7 +59,11 @@ class Gate():
         self._invoker = False
         self._raw_text = ""
         self._properties = {"read-only" : False, "color" : "black", "bold" : False, "italics": False, "underline": False}
+        self._cursor = GateCursor(self)
 
+    def cursor(self):
+        return self._cursor
+                                
     def set_invoker(self, invoker):
         self._invoker = invoker
         
@@ -72,6 +85,69 @@ class Gate():
     def process_full_key_event(self, fke):
         fke.gate = self
         self._invoker.match_key_event(fke)
+        self.cursor().update_selection()
+
+class GateCursor():
+
+    def __init__(self, gate):
+        self._gate = gate
+        self._point = 0
+        self._mark = 0
+        self._selection = {}
+        self._mark_active = False
+
+    def point(self):
+        return self._point
+
+    def mark(self):
+        return self._mark
+
+    def setpoint(self, pos):
+        raw_text = self._gate.get_raw_text()
+        if pos < 0:
+            self._point = 0
+        elif pos > len(raw_text):
+            self._point = len(raw_text)
+        else:
+            self._point = pos
+
+    def setmark(self, pos):
+        raw_text = self._gate.get_raw_text()
+        if pos < 0:
+            self._mark = 0
+        elif pos > len(raw_text):
+            self._mark = len(raw_text)
+        else:
+            self._mark = pos
+
+    def is_mark_active(self):
+        return self._mark_active
+
+    def activate_mark(self):
+        self._mark_active = True
+
+    def deactivate_mark(self):
+        self._mark_active = False
+
+    def update_selection(self):
+        raw_text = self._gate.get_raw_text()
+        if self._point < self._mark and self.is_mark_active():
+            string = raw_text[self._point:self._mark]
+        elif self._point > self._mark and self.is_mark_active():
+            string = raw_text[self._mark:self._point]
+        else:
+            string = ''
+
+        start = min(self._point, self._mark)
+        end = max(self._point, self._mark)
+
+        self._selection = {"string": string,
+                           "start": start,
+                           "end": end}
+
+    def selection(self):
+        return self._selection
+
 
 class Blueprint():
 

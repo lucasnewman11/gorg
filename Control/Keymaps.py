@@ -20,6 +20,7 @@ class Invoker():
 
     def invoke(self, fun, fke):
         # I need to write a line of code here which goes and calculates the args to be passed into the function
+        print(fun)
         fun.__call__(fke)
         
 class Keymap():
