@@ -11,6 +11,14 @@ class GorgKeyEvent():
         self.pos = pos
         self.frame = frame
 
+class GorgMouseEvent():
+
+    def __init__(self, typ, pos, win=False, frame=False):
+        self.typ = typ
+        self.pos = pos
+        self.win = win
+        self.frame = frame
+        
 class AlphaNamer():
 
     def __init__(self, length):
@@ -45,6 +53,7 @@ class Frame(QtGui.QWidget):
     # a custom QT class derived from a QWidget, consisting of a list of Windows and a minibuffer, displayed on a grid layout.
 
     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
+    gorg_mouse_event_signal = pyqtSignal(GorgMouseEvent)
     
     def __init__(self):
         super(Frame, self).__init__()
@@ -99,6 +108,7 @@ class Frame(QtGui.QWidget):
         self._obj_from_loc[loc] = obj
         self._grid.addWidget(obj, loc[0], loc[1])
         obj.gorg_key_event_signal.connect(self._gorg_key_event)
+        obj.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
 
     def remove_obj(self, obj):
         name = self._name_from_obj[obj]
@@ -109,6 +119,7 @@ class Frame(QtGui.QWidget):
         del self._obj_from_loc[loc]
         self._grid.removeWidget(obj)
         obj.gorg_key_event_signal.disconnect()
+        obj.gorg_mouse_event_signal.disconnect()
 
     def obj_from_path(self, path):
         path_list = path.split("/")
@@ -141,9 +152,14 @@ class Frame(QtGui.QWidget):
         gke.frame = self
         self.gorg_key_event_signal.emit(gke)
 
+    def _gorg_mouse_event(self, gme):
+        gme.frame = self
+        self.gorg_mouse_event_signal.emit(gme)        
+
 class Lattice(QtGui.QWidget):
 
     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
+    gorg_mouse_event_signal = pyqtSignal(GorgMouseEvent)
 
     def __init__(self):
         super(Lattice, self).__init__()
@@ -181,6 +197,7 @@ class Lattice(QtGui.QWidget):
         self._obj_from_loc[loc] = obj
         self._grid.addWidget(obj, loc[0], loc[1])
         obj.gorg_key_event_signal.connect(self._gorg_key_event)
+        obj.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
 
     def remove_obj(self, obj):
         name = self._name_from_obj[obj]
@@ -191,6 +208,7 @@ class Lattice(QtGui.QWidget):
         del self._obj_from_loc[loc]
         self._grid.removeWidget(obj)
         obj.gorg_key_event_signal.disconnect()
+        obj.gorg_mouse_event_signal.disconnect()
 
     def obj_from_path(self, path):
         path_list = path.split("/")
@@ -228,10 +246,14 @@ class Lattice(QtGui.QWidget):
     def _gorg_key_event(self, gke):
         self.gorg_key_event_signal.emit(gke)
 
+    def _gorg_mouse_event(self, gme):
+        self.gorg_mouse_event_signal.emit(gme)        
+
 class Window(QtGui.QWidget):
     # a custom QT class derived from a QFrame, consisting of a paired QTextEdit object and QLabel object.  Together, they display the contents and name of a Buffer object.  constructor accepts a buffer object
 
     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
+    gorg_mouse_event_signal = pyqtSignal(GorgMouseEvent)
 
     def __init__(self):
         super(Window, self).__init__()
@@ -254,10 +276,15 @@ class Window(QtGui.QWidget):
         self.setLayout(self._grid)
         # connect slots
         self.doc.gorg_key_event_signal.connect(self._gorg_key_event)
-        
+        self.doc.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
+    
     def _gorg_key_event(self, gke):
         gke.win = self
         self.gorg_key_event_signal.emit(gke)
+
+    def _gorg_mouse_event(self, gme):
+        gme.win = self
+        self.gorg_mouse_event_signal.emit(gme)        
 
     def setFocus(self):
         self.doc.setFocus()
@@ -278,6 +305,7 @@ class MiniWindow(QtGui.QWidget):
     # a custom QT class derived from a QFrame, consisting of a paired QTextEdit object and QLabel object.  Together, they display the contents and name of a Buffer object.  constructor accepts a buffer object
 
     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
+    gorg_mouse_event_signal = pyqtSignal(GorgMouseEvent)
 
     def __init__(self):
         super(MiniWindow, self).__init__()
@@ -292,10 +320,15 @@ class MiniWindow(QtGui.QWidget):
         self.setLayout(self._grid)
         # connect slots
         self.doc.gorg_key_event_signal.connect(self._gorg_key_event)
+        self.doc.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
         
     def _gorg_key_event(self, gke):
         gke.win = self
         self.gorg_key_event_signal.emit(gke)
+
+    def _gorg_mouse_event(self, gme):
+        gme.win = self
+        self.gorg_mouse_event_signal.emit(gme)
 
     def setFocus(self):
         self.doc.setFocus()
@@ -316,12 +349,13 @@ class GorgTextEdit(QtGui.QTextEdit):
     # customized QTextEdit class, initialized with a Gate object
 
     gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
+    gorg_mouse_event_signal = pyqtSignal(GorgMouseEvent)
 
     def __init__(self):
         super(GorgTextEdit, self).__init__()
         self._cursor = self.textCursor()
         self._last_selection = {}
-
+        
     def _select_text(self, start, end):
         self._cursor.setPosition(start)
         self._cursor.setPosition(end, mode = 1)
@@ -374,7 +408,9 @@ class GorgTextEdit(QtGui.QTextEdit):
         else:
             self._cursor.setPosition(focus.cursor().point())
         self.setTextCursor(self._cursor)
-        
+        layout = self.document().firstBlock().layout()
+        line = layout.lineForTextPosition(self._cursor.position())
+                
     def keyPressEvent(self, e):
         gke = GorgKeyEvent("p", e.key(), self._cursor.position())
         self.gorg_key_event_signal.emit(gke)
@@ -382,6 +418,21 @@ class GorgTextEdit(QtGui.QTextEdit):
     def keyReleaseEvent(self, e):
         gke = GorgKeyEvent("r", e.key(), self._cursor.position())
         self.gorg_key_event_signal.emit(gke)
+
+    def mousePressEvent(self, e):
+        pos = self.cursorForPosition(e.pos()).position()
+        gme = GorgMouseEvent("p", pos)
+        self.gorg_mouse_event_signal.emit(gme)
+
+    def mouseReleaseEvent(self, e):
+        pos = self.cursorForPosition(e.pos()).position()
+        gme = GorgMouseEvent("r", pos)
+        self.gorg_mouse_event_signal.emit(gme)
+
+    def mouseMoveEvent(self, e):
+        pos = self.cursorForPosition(e.pos()).position()
+        gme = GorgMouseEvent("m", pos)
+        self.gorg_mouse_event_signal.emit(gme)
 
 def main():
     

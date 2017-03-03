@@ -18,6 +18,17 @@ class Invoker():
         else:
             return False
 
+    def match_mouse_event(self, fme):
+        match = self._current_keymap.match(fme.string)
+        if match:
+            if type(match) == Keymap:
+                self._current_keymap = match
+            else:
+                self.invoke(match, fme)
+            return True
+        else:
+            return False
+
     def invoke(self, fun, fke):
         # I need to write a line of code here which goes and calculates the args to be passed into the function
         print(fun)

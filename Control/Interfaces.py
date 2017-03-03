@@ -40,19 +40,24 @@ class Interface():
             length = gate.get_len()
             num += length
             if num >= pos:
-                return (gate, num - length) # the gate and its starting position
+                return gate
         
     def process_full_key_event(self, fke):
         fke.inter = self
         if not self._invoker.match_key_event(fke):
             point = fke.gke.pos
-            gate, starting_pos = self.get_gate_by_pos(point)
-            adjusted_pos = point - starting_pos
-            fke.gate_start_pos = starting_pos
-            fke.gate_adjusted_pos = adjusted_pos
+            gate = self.get_gate_by_pos(point)
             gate.process_full_key_event(fke)
             self.setfocus(gate)
-        
+
+    def process_full_mouse_event(self, fme):
+        fme.inter = self
+        if not self._invoker.match_mouse_event(fme):
+            point = fme.gme.pos
+            gate = self.get_gate_by_pos(point)
+            gate.process_full_mouse_event(fme)
+            self.setfocus(gate)
+            
 class Gate():
 
     def __init__(self):
@@ -87,6 +92,11 @@ class Gate():
         self._invoker.match_key_event(fke)
         self.cursor().update_selection()
 
+    def process_full_mouse_event(self, fme):
+        fme.gate = self
+        self._invoker.match_mouse_event(fme)
+        self.cursor().update_selection()
+        
 class GateCursor():
 
     def __init__(self, gate):
@@ -148,6 +158,9 @@ class GateCursor():
     def selection(self):
         return self._selection
 
+    def get_selection(self, start, end):
+        raw_text = self._gate.get_raw_text()
+        return raw_text[start:end]
 
 class Blueprint():
 

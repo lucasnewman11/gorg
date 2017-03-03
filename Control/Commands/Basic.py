@@ -1,5 +1,4 @@
 def _insert_text(gate, pos, addition):
-    print("POS", pos)
     text_list = list(gate.get_raw_text())
     text_list.insert(pos, addition)
     point = gate.cursor().point()
@@ -12,7 +11,7 @@ def _insert_text(gate, pos, addition):
         gate.cursor().setmark(mark + len(addition))
 
 def hello(fke):
-    _insert_text(fke.gate, fke.gate_adjusted_pos, "hello")
+    _insert_text(fke.gate, fke.gate.cursor().point(), "hello")
     
 def insert_character(fke):
     string = fke.string
@@ -25,19 +24,21 @@ def insert_space(fke):
     _insert_text(fke.gate, fke.gate.cursor().point(), " ")
 
 def _delete_text(gate, start, end):
-    point = gate.cursor().point()
-    mark = gate.cursor().mark()
+    cursor = gate.cursor()
+    point = cursor.point()
+    mark = cursor.mark()
     text_list = list(gate.get_raw_text())
     new_text_list = text_list[:start] + text_list[end:]
     gate.set_raw_text("".join(new_text_list))
     if end < point:
-        gate.cursor().setpoint(point - (end - start))
+        cursor.setpoint(point - (end - start))
     elif end >= point and start < point:
-        gate.cursor().setpoint(start)
+        cursor.setpoint(start)
     if end < mark:
-        gate.cursor().setmark(mark - (end - start))
+        cursor.setmark(mark - (end - start))
     elif end >= mark and start < mark:
-        gate.cursor().setmark(start)
+        cursor.setmark(start)
+    cursor.deactivate_mark()
     
 def delete(fke):
     selection = fke.gate.cursor().selection()
@@ -51,66 +52,138 @@ def delete(fke):
 def insert_new_line(fke):
     _insert_text(fke.gate, fke.gate.cursor().point(), "\n")
 
-def _advance_point_only(cursor, num):
-    cursor.setpoint(cursor.point() + num)
+def _move_point_only(cursor, pos):
+    cursor.setpoint(pos)
 
-def _advance_mark_only(cursor, num):
-    cursor.setmark(cursor.mark() + num)
+def _move_mark_only(cursor, pos):
+    cursor.setmark(pos)
 
-def _advance_point(cursor, num):
-    _advance_point_only(cursor, num)
+def _move_point(cursor, pos):
+    _move_point_only(cursor, pos)
     if not cursor.is_mark_active():
-        _advance_mark_only(cursor, num)
+        _move_mark_only(cursor, pos)
 
+def move_point_to_click(fme):
+    cursor = fme.gate.cursor()
+    _move_point(cursor, fme.gme.pos)
+
+def move_mark_to_mouse_location(fme):
+    cursor = fme.gate.cursor()
+    cursor.activate_mark()
+    _move_mark_only(cursor, fme.gme.pos)
+    
 def advance_point_by_char(fke):
     cursor = fke.gate.cursor()
-    _advance_point(cursor, 1)
+    pos = cursor.point() + 1
+    _move_point(cursor, pos)
             
 def retreat_point_by_char(fke):
     cursor = fke.gate.cursor()
-    _advance_point(cursor, -1)
+    pos = cursor.point() - 1
+    _move_point(cursor, pos)
 
-def _search_string_forwards(pattern, string, pos):
+def _search_string_forwards(pattern, string):
     import re
-    test_string = string[pos:]
-    match = re.search(pattern, test_string)
-    relative_match_pos = match.start()
-    match_pos = relative_match_pos + pos
+    match = re.search(pattern, string)
+    if match:
+        match_pos = match.start()
+    else:
+        match_pos = len(string)
     return match_pos
 
-def _search_string_backwards(pattern, string, pos):
+def _search_string_backwards(pattern, string):
     import re
-    test_string = string[:pos]
-    match = list(re.finditer(pattern, test_string))[-1]
-    match_pos = match.start()
+    matches = list(re.finditer(pattern, string))
+    if matches:
+        match_pos = matches[-1].start()
+    else:
+        match_pos = 0
     return match_pos
+
+def _advance_point_to_match(gate, pattern):
+    text = gate.get_raw_text()
+    cursor = gate.cursor()
+    point = cursor.point()
+    remaining = text[point:]
+    relative_pos = _search_string_forwards(pattern, remaining)
+    pos = point + relative_pos
+    _move_point(cursor, pos)
+
+def _retreat_point_to_match(gate, pattern):
+    text = gate.get_raw_text()
+    cursor = gate.cursor()
+    point = cursor.point()
+    remaining = text[:point]
+    pos = _search_string_backwards(pattern, remaining)
+    _move_point(cursor, pos)
 
 def advance_point_by_word(fke):
+    gate = fke.gate
+    _advance_point_to_match(gate, "\s")
+    _advance_point_to_match(gate, "[^\s]")
+
+def retreat_point_by_word(fke):
+    gate = fke.gate
+    _retreat_point_to_match(gate, "[^\s]")
+    _retreat_point_to_match(gate, "\s")
+    _advance_point_to_match(gate, "[^\s]")
+
+def move_point_start_of_line(fke):
+    gte = fke.gke.win.doc
     cursor = fke.gate.cursor()
     point = cursor.point()
-    text = fke.gate.get_raw_text()
+    layout = gte.document().firstBlock().layout()
+    line = layout.lineForTextPosition(point)
+    pos = line.textStart()
+    _move_point(cursor, pos)
 
-    distance = 0
-    space = False
-    pos = point+1
-    while not space:
-        i = False
+def move_point_end_of_line(fke):
+    gte = fke.gke.win.doc
+    cursor = fke.gate.cursor()
+    point = cursor.point()
+    layout = gte.document().firstBlock().layout()
+    line = layout.lineForTextPosition(point)
+    pos = line.textStart() + line.textLength() - 1
+    _move_point(cursor, pos)
 
-        try:
-            i = text[pos]
-        except IndexError:
-            space = True
-        if i == " ":
-            space = True
-        elif i == "\n":
-            space = True
-        else:
-            pos += 1
+def move_point_next_line(fke):
+    gte = fke.gke.win.doc
+    cursor = fke.gate.cursor()
+    point = cursor.point()
+    layout = gte.document().firstBlock().layout()
+    line = layout.lineForTextPosition(point)
+    target_line = layout.lineAt(line.lineNumber()+1)
+    column = gte._cursor.columnNumber()
+    _move_point(cursor, target_line.textStart())
+    if target_line.textLength() > column:
+        _move_point(cursor, cursor.point() + column)
+    else:
+        _move_point(cursor, target_line.textStart() + target_line.textLength() - 1)
+    
+def move_point_previous_line(fke):
+    move_point_start_of_line(fke)
+    gte = fke.gke.win.doc
+    cursor = fke.gate.cursor()
+    point = cursor.point()
+    layout = gte.document().firstBlock().layout()
+    line = layout.lineForTextPosition(point)
+    target_line = layout.lineAt(line.lineNumber()-1)
+    column = gte._cursor.columnNumber()
+    _move_point(cursor, target_line.textStart())
+    if target_line.textLength() > column:
+        _move_point(cursor, cursor.point() + column)
+    else:
+        _move_point(cursor, target_line.textStart() + target_line.textLength() - 1)
+    
+def advance_point_by_sentence(fke):
+    _advance_point_to_match(fke.gate, "\.\s")
+    _advance_point_to_match(fke.gate, "[^\.\s]")
 
-        distance += 1            
-
-    _advance_point(cursor, distance)
-
+def retreat_point_by_sentence(fke):
+    _retreat_point_to_match(fke.gate, "[^\.\s]")
+    _retreat_point_to_match(fke.gate, "\.\s")
+    _advance_point_to_match(fke.gate, "[^\.\s]")
+      
 def set_mark(fke):
     cursor = fke.gate.cursor()
     point = cursor.point()
@@ -123,6 +196,8 @@ def set_mark(fke):
     elif point == mark and cursor.is_mark_active():
         cursor.setmark(point)
         cursor.deactivate_mark()
+
+
 
     
 

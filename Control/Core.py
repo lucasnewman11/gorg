@@ -5,6 +5,24 @@ from Control.Keymaps import Keymap, Invoker
 import View
 import Data
 
+class FullKeyEvent():
+
+    def __init__(self, gke, string, commander, inter=False, gate=False):
+        self.gke = gke
+        self.string = string
+        self.commander = commander
+        self.inter = inter
+        self.gate = gate
+
+class FullMouseEvent():
+
+    def __init__(self, gme, string, commander, inter=False, gate=False):
+        self.gme = gme
+        self.string = string
+        self.commander = commander
+        self.inter = inter
+        self.gate = gate
+
 class Commander():
     # the top level controller class
 
@@ -19,12 +37,14 @@ class Commander():
         self._windows = {}
         self._interfaces = {}
         self._window_assignments = {}
+        self._ring = KillRing()
         self._initUI()
         # connect slot
 
     def _initUI(self):
         self.frame = View.Frames.Frame()
         self.frame.gorg_key_event_signal.connect(self._gorg_key_event)
+        self.frame.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
 
         start_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
         self.add_interface("start", start_interface)
@@ -62,6 +82,18 @@ class Commander():
             target_interface.process_full_key_event(fke)
         self._update_views()
 
+    def _gorg_mouse_event(self, gme):
+        fms = self._handler.process_gorg_mouse_event(gme)
+        if gme.typ in ("p", "m"):
+            fme = FullMouseEvent(gme, fms, self)
+            self.process_full_mouse_event(fme)
+
+    def process_full_mouse_event(self, fme):
+        if not self._invoker.match_mouse_event(fme):
+            target_interface = self._window_assignments[fme.gme.win]
+            target_interface.process_full_mouse_event(fme)
+        self._update_views()
+            
     def _update_views(self):
         for i in self._windows:
             window = self._windows[i]
@@ -98,7 +130,13 @@ class KeyEventHandler():
             return "Spc"
         else:
             return chr(key)
-        
+
+    def _convert_click_to_gclick(self, typ):
+        if typ in ("p", "r"):
+            return "MOUSE_P"
+        elif typ == "m":
+            return "MOUSE_M"
+
     def _get_full_key_string(self):
         event_string = False
         if self._currently_pressed_keys:
@@ -121,15 +159,28 @@ class KeyEventHandler():
 
         return self._get_full_key_string()
 
+    def process_gorg_mouse_event(self, gme):
+        typ = gme.typ
+        pos = gme.pos
+        gclick = self._convert_click_to_gclick(typ)
+        if typ == "p":
+            if gclick not in self._currently_pressed_keys:
+                self._currently_pressed_keys.append(gclick)
+        elif typ == "r":
+                self._currently_pressed_keys.remove(gclick)
+        elif typ == "m":
+            return gclick
+        return self._get_full_key_string()
 
-class FullKeyEvent():
+class KillRing():
 
-    def __init__(self, gke, string, commander, inter=False, gate=False, start_pos=False, adjusted_pos=False):
-        self.gke = gke
-        self.string = string
-        self.commander = commander
-        self.inter = inter
-        self.gate = gate
-        self.gate_start_pos = start_pos
-        self.gate_adjusted_pos = adjusted_pos
+    def __init__(self):
+        self._members = []
+
+    def add(self, new):
+        self._members.append(new)
+
+    def next(self):
+        return self._members.pop()
+        
         
