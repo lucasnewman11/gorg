@@ -10,18 +10,18 @@ def _insert_text(gate, pos, addition):
     if pos <= mark:
         gate.cursor().setmark(mark + len(addition))
 
-def hello(fke):
-    _insert_text(fke.gate, fke.gate.cursor().point(), "hello")
+def hello(fie):
+    _insert_text(fie.gate, fie.gate.cursor().point(), "hello")
     
-def insert_character(fke):
-    string = fke.string
+def insert_character(fie):
+    string = fie.string
     if string[0:4] == "Shft":
-        _insert_text(fke.gate, fke.gate.cursor().point(), string[5:])
+        _insert_text(fie.gate, fie.gate.cursor().point(), string[5:])
     else:
-        _insert_text(fke.gate, fke.gate.cursor().point(), string.lower())
+        _insert_text(fie.gate, fie.gate.cursor().point(), string.lower())
 
-def insert_space(fke):
-    _insert_text(fke.gate, fke.gate.cursor().point(), " ")
+def insert_space(fie):
+    _insert_text(fie.gate, fie.gate.cursor().point(), " ")
 
 def _delete_text(gate, start, end):
     cursor = gate.cursor()
@@ -40,17 +40,19 @@ def _delete_text(gate, start, end):
         cursor.setmark(start)
     cursor.deactivate_mark()
     
-def delete(fke):
-    selection = fke.gate.cursor().selection()
-    if len(selection["string"]) > 0:
-        _delete_text(fke.gate, selection["start"], selection["end"])
+def delete(fie):
+    gate = fie.gate
+    cursor = gate.cursor()
+    selection = cursor.selection()
+    if len(selection) > 0:
+        _delete_text(gate, gate.start(), gate.end())
     else:
-        point = fke.gate.cursor().point()
-        _delete_text(fke.gate, point-1, point)
-    fke.gate.mark_active = False
+        point = cursor.point()
+        _delete_text(gate, point-1, point)
+    cursor.deactive_mark()
 
-def insert_new_line(fke):
-    _insert_text(fke.gate, fke.gate.cursor().point(), "\n")
+def insert_new_line(fie):
+    _insert_text(fie.gate, fie.gate.cursor().point(), "\n")
 
 def _move_point_only(cursor, pos):
     cursor.setpoint(pos)
@@ -65,20 +67,20 @@ def _move_point(cursor, pos):
 
 def move_point_to_click(fme):
     cursor = fme.gate.cursor()
-    _move_point(cursor, fme.gme.pos)
+    _move_point(cursor, fme.gie.pos)
 
 def move_mark_to_mouse_location(fme):
     cursor = fme.gate.cursor()
     cursor.activate_mark()
-    _move_mark_only(cursor, fme.gme.pos)
+    _move_mark_only(cursor, fme.gie.pos)
     
-def advance_point_by_char(fke):
-    cursor = fke.gate.cursor()
+def advance_point_by_char(fie):
+    cursor = fie.gate.cursor()
     pos = cursor.point() + 1
     _move_point(cursor, pos)
             
-def retreat_point_by_char(fke):
-    cursor = fke.gate.cursor()
+def retreat_point_by_char(fie):
+    cursor = fie.gate.cursor()
     pos = cursor.point() - 1
     _move_point(cursor, pos)
 
@@ -117,38 +119,49 @@ def _retreat_point_to_match(gate, pattern):
     pos = _search_string_backwards(pattern, remaining)
     _move_point(cursor, pos)
 
-def advance_point_by_word(fke):
-    gate = fke.gate
+def advance_point_by_word(fie):
+    gate = fie.gate
     _advance_point_to_match(gate, "\s")
     _advance_point_to_match(gate, "[^\s]")
 
-def retreat_point_by_word(fke):
-    gate = fke.gate
+def retreat_point_by_word(fie):
+    gate = fie.gate
     _retreat_point_to_match(gate, "[^\s]")
     _retreat_point_to_match(gate, "\s")
     _advance_point_to_match(gate, "[^\s]")
 
-def move_point_start_of_line(fke):
-    gte = fke.gke.win.doc
-    cursor = fke.gate.cursor()
+def _start_of_line(fie):
+    import pdb
+    gte = fie.gie.win.doc
+    cursor = fie.gate.cursor()
     point = cursor.point()
     layout = gte.document().firstBlock().layout()
     line = layout.lineForTextPosition(point)
     pos = line.textStart()
-    _move_point(cursor, pos)
+    # return pos
 
-def move_point_end_of_line(fke):
-    gte = fke.gke.win.doc
-    cursor = fke.gate.cursor()
+def _end_of_line(fie):
+    gte = fie.gie.win.doc
+    cursor = fie.gate.cursor()
     point = cursor.point()
     layout = gte.document().firstBlock().layout()
     line = layout.lineForTextPosition(point)
     pos = line.textStart() + line.textLength() - 1
-    _move_point(cursor, pos)
+    # return pos
+    
+def move_point_start_of_line(fie):
+    cursor = fie.gate.cursor()
+    pos = _start_of_line(fie)
+    # _move_point(cursor, pos)    
 
-def move_point_next_line(fke):
-    gte = fke.gke.win.doc
-    cursor = fke.gate.cursor()
+def move_point_end_of_line(fie):
+    cursor = fie.gate.cursor()
+    pos = _end_of_line(fie)
+    # _move_point(cursor, pos)
+
+def move_point_next_line(fie):
+    gte = fie.gie.win.doc
+    cursor = fie.gate.cursor()
     point = cursor.point()
     layout = gte.document().firstBlock().layout()
     line = layout.lineForTextPosition(point)
@@ -160,10 +173,9 @@ def move_point_next_line(fke):
     else:
         _move_point(cursor, target_line.textStart() + target_line.textLength() - 1)
     
-def move_point_previous_line(fke):
-    move_point_start_of_line(fke)
-    gte = fke.gke.win.doc
-    cursor = fke.gate.cursor()
+def move_point_previous_line(fie):
+    gte = fie.gie.win.doc
+    cursor = fie.gate.cursor()
     point = cursor.point()
     layout = gte.document().firstBlock().layout()
     line = layout.lineForTextPosition(point)
@@ -175,17 +187,17 @@ def move_point_previous_line(fke):
     else:
         _move_point(cursor, target_line.textStart() + target_line.textLength() - 1)
     
-def advance_point_by_sentence(fke):
-    _advance_point_to_match(fke.gate, "\.\s")
-    _advance_point_to_match(fke.gate, "[^\.\s]")
+def advance_point_by_sentence(fie):
+    _advance_point_to_match(fie.gate, "\.\s")
+    _advance_point_to_match(fie.gate, "[^\.\s]")
 
-def retreat_point_by_sentence(fke):
-    _retreat_point_to_match(fke.gate, "[^\.\s]")
-    _retreat_point_to_match(fke.gate, "\.\s")
-    _advance_point_to_match(fke.gate, "[^\.\s]")
+def retreat_point_by_sentence(fie):
+    _retreat_point_to_match(fie.gate, "[^\.\s]")
+    _retreat_point_to_match(fie.gate, "\.\s")
+    _advance_point_to_match(fie.gate, "[^\.\s]")
       
-def set_mark(fke):
-    cursor = fke.gate.cursor()
+def set_mark(fie):
+    cursor = fie.gate.cursor()
     point = cursor.point()
     mark = cursor.mark()
     if point != mark:
@@ -196,6 +208,91 @@ def set_mark(fke):
     elif point == mark and cursor.is_mark_active():
         cursor.setmark(point)
         cursor.deactivate_mark()
+
+def kill_region(fie):
+    gate = fie.gate
+    cursor = gate.cursor()
+    ring = cursor.ring()
+    selection = cursor.selection()
+    start = cursor.start()
+    end = cursor.end()
+    ring.add(selection)
+    _delete_text(gate, start, end)
+
+def kill_line(fie):
+    gate = fie.gate
+    cursor = gate.cursor()
+    point = cursor.point()
+    ring = cursor.ring()
+    end_of_line = _end_of_line(fie)
+    substring = cursor.get_substring(point, end_of_line)
+    ring.add(substring)
+    _delete_text(gate, point, end_of_line)
+
+def yank(fie):
+    gate = fie.gate
+    cursor = gate.cursor()
+    point = cursor.point()
+    ring = cursor.ring()
+    attempt = ring.get()
+    _insert_text(gate, point, attempt)
+    gate.set_active_keymap(fie.commander.keymaps()["Yank"])
+    
+def yank_next(fie):
+    gate = fie.gate
+    cursor = gate.cursor()
+    point = cursor.point()
+    ring = cursor.ring()
+    # deletes last yank attempt
+    current = ring.get()
+    start_of_current = point - len(current)
+    _delete_text(gate, start_of_current, point)
+    point = cursor.point()
+    # updates ring
+    ring.next_index()
+    attempt = ring.get()
+    _insert_text(gate, point, attempt)
+        
+def yank_previous(fie):
+    gate = fie.gate
+    cursor = gate.cursor()
+    point = cursor.point()
+    ring = cursor.ring()
+    # deletes last yank attempt
+    current = ring.get()
+    start_of_current = point - len(current)
+    _delete_text(gate, start_of_current, point)
+    point = cursor.point()
+    # updates ring
+    ring.previous_index()
+    attempt = ring.get()
+    _insert_text(gate, point, attempt)
+
+def yank_pop(fie):
+    gate = fie.gate
+    gate.set_active_keymap(gate.primary_keymap())
+    ring = gate.cursor().ring()
+    ring.remove(ring.index())
+
+def yank_place(fie):
+    gate = fie.gate
+    gate.set_active_keymap(gate.primary_keymap())
+
+def yank_cancel(fie):
+    gate = fie.gate
+    cursor = gate.cursor()
+    point = cursor.point()
+    ring = cursor.ring()
+    # deletes last yank attempt
+    current = ring.get()
+    start_of_current = point - len(current)
+    _delete_text(gate, start_of_current, point)
+    # resets keymap
+    gate.set_active_keymap(gate.primary_keymap())
+
+
+
+    
 
 
 

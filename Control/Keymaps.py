@@ -1,45 +1,12 @@
 import Control.Commands
 import re
-
-class Invoker():
-
-    def __init__(self, keymap):
-        self._default_keymap = keymap
-        self._current_keymap = self._default_keymap
-
-    def match_key_event(self, fke):
-        match = self._current_keymap.match(fke.string)
-        if match:
-            if type(match) == Keymap:
-                self._current_keymap = match
-            else:
-                self.invoke(match, fke)
-            return True
-        else:
-            return False
-
-    def match_mouse_event(self, fme):
-        match = self._current_keymap.match(fme.string)
-        if match:
-            if type(match) == Keymap:
-                self._current_keymap = match
-            else:
-                self.invoke(match, fme)
-            return True
-        else:
-            return False
-
-    def invoke(self, fun, fke):
-        # I need to write a line of code here which goes and calculates the args to be passed into the function
-        print(fun)
-        fun.__call__(fke)
         
 class Keymap():
     def __init__(self):
         self._dict = {}
 
     def add(self, key_string, dest):
-        # Accepts as argument 1) a string containing a key press representation, and 2) either a keymap object or a function object.
+        # Accepts as argument 1) a string containing an input event representation, and 2) a function object.
         self._dict[key_string] = dest
 
     def match(self, string):
@@ -52,19 +19,41 @@ class Keymap():
         else:
             return False
 
+    def match_input_event(self, e):
+        print(e.string)
+        print(self._dict)
+        match = self.match(e.string)
+        if match:
+            self.invoke(match, e)
+        else:
+            return False
+
+    def invoke(self, fun, e):
+        # I need to write a line of code here which goes and calculates the args to be passed into the function
+        print(fun)
+        fun.__call__(e)
+
+    def getdict(self):
+        return self._dict
+
 def make_keymaps_dict_from_file(fyl):
     keymaps = {}
     for line in fyl:
         token_list = line[1:-2].split()
-        fun = token_list[0]
-        args = token_list[1:]
-        if fun == "map":
-            keymaps[args[0]] = Keymap()
-        if fun == "bindmap":
-            keymaps[args[0]].add(re.compile(args[1]), keymaps[args[2]])
-        if fun == "bindcom":
-            keymaps[args[0]].add(re.compile(args[1]), getattr(Control.Commands, args[2]))
+        if len(token_list) > 1:
+            fun = token_list[0]
+            args = token_list[1:]
+            if fun == "map":
+                keymaps[args[0]] = Keymap()
+            if fun == "bind":
+                keymaps[args[0]].add(re.compile(args[1]), getattr(Control.Commands, args[2]))
+            if fun == "add":
+                pairings = keymaps[args[1]].getdict()
+                for i in pairings:
+                    keymaps[args[0]].add(i, pairings[i])
     return keymaps
+
+
             
 
 

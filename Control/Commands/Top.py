@@ -1,14 +1,14 @@
 import View.Frames
 
-def _split_window(fke, ori):
+def _split_window(fie, ori):
 
-    window = fke.gke.win
+    window = fie.gie.win
     parent = window.parent()
     loc = parent.loc_from_obj(window)
     path = window.path()
     name = parent.name_from_obj(window)
-    frame = fke.gke.frame
-    comm = fke.commander
+    frame = fie.gie.frame
+    comm = fie.commander
     inter = comm.get_interface(window)
 
     print(window, loc, path, name)
@@ -31,14 +31,14 @@ def _split_window(fke, ori):
     comm.assign_window(new_window, inter)
     
 
-def split_window_horizontal(fke):
-    _split_window.__call__(fke, "h")
+def split_window_horizontal(fie):
+    _split_window.__call__(fie, "h")
 
-def split_window_vertical(fke):
-    _split_window.__call__(fke, "v")
+def split_window_vertical(fie):
+    _split_window.__call__(fie, "v")
 
-def change_window_focus(fke):
-    window = fke.gke.win
+def change_window_focus(fie):
+    window = fie.gie.win
     next_window = _get_next_window(window)
     print(next_window)
     next_window.setFocus()

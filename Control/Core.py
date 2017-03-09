@@ -1,23 +1,14 @@
 import sys, types
 from PyQt4.QtCore import Qt, QObject, pyqtSignal
 from PyQt4 import QtGui
-from Control.Keymaps import Keymap, Invoker
+from Control.Keymaps import Keymap
 import View
 import Data
 
-class FullKeyEvent():
+class FullInputEvent():
 
-    def __init__(self, gke, string, commander, inter=False, gate=False):
-        self.gke = gke
-        self.string = string
-        self.commander = commander
-        self.inter = inter
-        self.gate = gate
-
-class FullMouseEvent():
-
-    def __init__(self, gme, string, commander, inter=False, gate=False):
-        self.gme = gme
+    def __init__(self, gie, string, commander, inter=False, gate=False):
+        self.gie = gie
         self.string = string
         self.commander = commander
         self.inter = inter
@@ -33,11 +24,9 @@ class Commander():
         self._keymaps = keymaps_dict
         self._blueprints = blueprints_dict
         self._handler = KeyEventHandler()
-        self._invoker = Invoker(self._keymaps["Top"])
         self._windows = {}
         self._interfaces = {}
         self._window_assignments = {}
-        self._ring = KillRing()
         self._initUI()
         # connect slot
 
@@ -58,6 +47,13 @@ class Commander():
         self.assign_window(miniwindow, start_interface)
 
         self.frame.show()
+
+    def keymaps(self):
+        return self._keymaps
+
+    def blueprints(self):
+        return self._blueprints
+    
     def add_window(self, name, window):
         self._windows[name] = window
 
@@ -73,32 +69,24 @@ class Commander():
     def _gorg_key_event(self, gke):
         fks = self._handler.process_gorg_key_event(gke)
         if gke.typ == "p":
-            fke = FullKeyEvent(gke, fks, self)
-            self.process_full_key_event(fke)
-
-    def process_full_key_event(self, fke):
-        if not self._invoker.match_key_event(fke):
-            target_interface = self._window_assignments[fke.gke.win]
-            target_interface.process_full_key_event(fke)
-        self._update_views()
+            fie = FullInputEvent(gke, fks, self)
+            self._process_full_input_event(fie)
 
     def _gorg_mouse_event(self, gme):
         fms = self._handler.process_gorg_mouse_event(gme)
         if gme.typ in ("p", "m"):
-            fme = FullMouseEvent(gme, fms, self)
-            self.process_full_mouse_event(fme)
+            fie = FullInputEvent(gme, fms, self)
+            self._process_full_input_event(fie)
 
-    def process_full_mouse_event(self, fme):
-        if not self._invoker.match_mouse_event(fme):
-            target_interface = self._window_assignments[fme.gme.win]
-            target_interface.process_full_mouse_event(fme)
+    def _process_full_input_event(self, fie):
+        target_interface = self._window_assignments[fie.gie.win]
+        target_interface.process_full_input_event(fie)
         self._update_views()
-            
+
     def _update_views(self):
         for i in self._windows:
             window = self._windows[i]
             window.doc.update_view(self._window_assignments[window])
-
 
 class KeyEventHandler():
 
@@ -172,15 +160,5 @@ class KeyEventHandler():
             return gclick
         return self._get_full_key_string()
 
-class KillRing():
-
-    def __init__(self):
-        self._members = []
-
-    def add(self, new):
-        self._members.append(new)
-
-    def next(self):
-        return self._members.pop()
         
         
