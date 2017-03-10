@@ -7,7 +7,7 @@ import Data
 
 class FullInputEvent():
 
-    def __init__(self, gie, string, commander, inter=False, gate=False):
+    def __init__(self, gie, string, commander, inter=[], gate=False):
         self.gie = gie
         self.string = string
         self.commander = commander
@@ -87,7 +87,7 @@ class Commander():
     def _update_views(self):
         for i in self._windows:
             window = self._windows[i]
-            window.doc.update_view(self._window_assignments[window])
+            window.update_view(self._window_assignments[window])
 
 class KeyEventHandler():
 

@@ -6,76 +6,119 @@ class Interface():
     # The controller class responsible for facilitating the manipulation of a specific chunk of data through a specific gate.
 
     def __init__(self):
-        self._gates = {}
+        self._subordinates = {}
         self._order = []
         self._focus = False
+        self._name = ""
+        self._parent = False
 
-    def setfocus(self, gate):
-        self._focus = gate
+    def name(self):
+        return self._name
 
-    def getfocus(self):
+    def setName(self, name):
+        self._name = name
+
+    def parent(self):
+        return self._parent
+
+    def setParent(self, parent):
+        self._parent = parent
+
+    def focus(self):
         return self._focus
+
+    def setFocus(self, sub):
+        self._focus = sub
         
-    def add_gate(self, name):
-        self._gates[name] = Gate()
+    def add(self, name, sub):
+        self._subordinates[name] = sub
         self._order.append(name)
+        sub.setParent(self)
         
-    def get_full_text(self):
-        text_list = []
+    def fragments(self):
+        fragments = []
         for i in self._order:
-            text_list.append(self._gates[i].get_full_text())
-        return text_list
+            fragments.append(self._subordinates[i].fragments())
+        return fragments
 
-    def get_gate_by_name(self, name):
-        return self._gates[name]
+    def subByName(self, name):
+        return self._subordinates[name]
 
-    def get_gate_by_pos(self, pos):
+    def subByPos(self, pos):
         num = 0
         for i in self._order:
-            gate = self._gates[i]
-            length = gate.get_len()
+            sub = self._subordinates[i]
+            length = sub.length()
             num += length
             if num >= pos:
-                return gate
+                return sub
         
-    def process_full_input_event(self, fie):
-        fie.inter = self
+    def processFullInputEvent(self, fie):
+        fie.inter.append(self)
         point = fie.gie.pos
-        gate = self.get_gate_by_pos(point)
-        gate.process_full_input_event(fie)
-        self.setfocus(gate)
+        sub = self.subByPos(point)
+        sub.processFullInputEvent(fie)
+        self.setFocus(sub)
 
 class Gate():
 
     def __init__(self):
+        self._name = ""
+        self._parent = False
+        self._cursor = GateCursor(self)
+        self._read_only = False
+        self._crop = False
         self._active_keymap = False
         self._primary_keymap = False
-        self._raw_text = ""
-        self._properties = {"read-only" : False, "color" : "black", "bold" : False, "italics": False, "underline": False}
-        self._cursor = GateCursor(self)
+        self._text = ""
+        self._text_properties = {"colors" : {"black": []}, "bold" : [], "italics": [], "underline": []}
+
+    def name(self):
+        return self._name
+
+    def setName(self, name):
+        self._name = name
+
+    def parent(self):
+        return self._parent
+
+    def setParent(self):
+        self._parent = parent
 
     def cursor(self):
         return self._cursor
 
-    def active_keymap(self):
+    def readOnly(self):
+        return self._read_only
+
+    def setReadOnly(self, ro):
+        self._read_only = ro
+
+    def crop(self):
+        return self._crop
+
+    def setCrop(self, crop):
+        self._crop = crop
+
+    def activeMap(self):
         return self._active_keymap
 
-    def primary_keymap(self):
-        return self._primary_keymap
-                                
-    def set_active_keymap(self, keymap):
+    def setActiveMap(self, keymap):
         self._active_keymap = keymap
 
-    def set_primary_keymap(self, keymap):
+    def primaryMap(self):
+        return self._primary_keymap
+                                
+    def setPrimaryMap(self, keymap):
         self._primary_keymap = keymap
         
-    def set_raw_text(self, text):
+    def setRaw_text(self, text):
         self._raw_text = text
 
     def set_property(self, name, value):
         self._properties[name] = value
 
-    def get_len(self):
+    def length(self):
         return len(self._raw_text)
 
     def get_raw_text(self):
@@ -89,6 +132,24 @@ class Gate():
         self._active_keymap.match_input_event(fie)
         self.cursor().update_selection()
 
+class Fragment():
+
+    def __init__(self)
+        self._text = ""
+        self._properties = {"color" : "black", "bold" : False, "italics": False, "underline": False}
+
+    def text(self):
+        return self._text
+
+    def setText(self, text):
+        self._text = text
+
+    def properties(self):
+        return self._properties
+
+    def setProperty(self, name, value):
+        self._properties[name] = value
+
 class Blueprint():
 
     def __init__(self):
@@ -99,7 +160,7 @@ class Blueprint():
     def set_name(self, name):
         self._name = name
 
-    def get_name(self):
+    def name(self):
         return self._name
 
     def set_order(self, order):
@@ -123,14 +184,17 @@ class Blueprint():
 
     def interface(self, keymaps_dict):
         interface = Interface()
+        interface.setname(self.name())
         for i in self._order:
             interface.add_gate(i)
             keymap = keymaps_dict[self.get_gate_property(i, "keymap")]
+            interface.get_gate_by_name(i).setname(i)
             interface.get_gate_by_name(i).set_active_keymap(keymap)
             interface.get_gate_by_name(i).set_primary_keymap(keymap)
             interface.get_gate_by_name(i).set_raw_text(self.get_gate_property(i, "text"))
             for j in ("read-only", "color", "bold", "italics", "underline"):
                 interface.get_gate_by_name(i).set_property(j, self.get_gate_property(i, j))
+            interface.setfocus(i)        
         return interface
         
 def make_blueprints_dict_from_file(fyl):

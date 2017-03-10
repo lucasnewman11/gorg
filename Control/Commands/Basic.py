@@ -131,7 +131,7 @@ def retreat_point_by_word(fie):
 
 def _start_of_line(fie):
     import pdb
-    gte = fie.gie.win.doc
+    gte = fie.gie.win.gte()
     cursor = fie.gate.cursor()
     point = cursor.point()
     document = gte.document()
@@ -152,7 +152,7 @@ def _start_of_line(fie):
     return pos+1
 
 def _end_of_line(fie):
-    gte = fie.gie.win.doc
+    gte = fie.gie.win.gte()
     gate = fie.gate
     text = gate.get_raw_text()
     text_length = len(text)
@@ -186,7 +186,7 @@ def move_point_end_of_line(fie):
     _move_point(cursor, pos)
 
 def move_point_next_line(fie):
-    gte = fie.gie.win.doc
+    gte = fie.gie.win.gte()
     cursor = fie.gate.cursor()
     point = cursor.point()
     document = gte.document()
@@ -230,7 +230,7 @@ def print_shit(fie):
     True
     
 def move_point_previous_line(fie):
-    gte = fie.gie.win.doc
+    gte = fie.gie.win.gte()
     cursor = fie.gate.cursor()
     point = cursor.point()
     document = gte.document()

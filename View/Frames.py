@@ -247,59 +247,7 @@ class Lattice(QtGui.QWidget):
         self.gorg_key_event_signal.emit(gke)
 
     def _gorg_mouse_event(self, gme):
-        self.gorg_mouse_event_signal.emit(gme)        
-
-class Window(QtGui.QWidget):
-    # a custom QT class derived from a QFrame, consisting of a paired QTextEdit object and QLabel object.  Together, they display the contents and name of a Buffer object.  constructor accepts a buffer object
-
-    gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
-    gorg_mouse_event_signal = pyqtSignal(GorgMouseEvent)
-
-    def __init__(self):
-        super(Window, self).__init__()
-        # initialize layout
-        self.doc = GorgTextEdit()
-        policy = QtGui.QSizePolicy()
-        policy.setVerticalPolicy(QtGui.QSizePolicy.Ignored)
-        policy.setHorizontalPolicy(QtGui.QSizePolicy.Ignored)
-        self.setSizePolicy(policy)
-        self._statusbar = QtGui.QLabel()
-        self._statusbar.setAutoFillBackground(True)
-        self._statusbar.setText("<b>Window Label</b>")
-        self._statusbar.setStyleSheet("QLabel { background-color : rgb(112, 128, 144); color : white; }")
-        self._statusbar.setTextFormat(1)
-        self._grid = QtGui.QGridLayout()
-        self._grid.addWidget(self.doc, 1, 1)
-        self._grid.addWidget(self._statusbar, 2, 1)
-        self._grid.setSpacing(0)
-        self._grid.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self._grid)
-        # connect slots
-        self.doc.gorg_key_event_signal.connect(self._gorg_key_event)
-        self.doc.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
-    
-    def _gorg_key_event(self, gke):
-        gke.win = self
-        self.gorg_key_event_signal.emit(gke)
-
-    def _gorg_mouse_event(self, gme):
-        gme.win = self
-        self.gorg_mouse_event_signal.emit(gme)        
-
-    def setFocus(self):
-        self.doc.setFocus()
-
-    def path(self):
-        myname = self.parent().name_from_obj(self)
-        parent_path = self.parent().path()
-        if parent_path:
-            mypath = parent_path + "/" + myname
-        else:
-            mypath = myname
-        return mypath
-
-    def get_sub_paths(self):
-        return False
+        self.gorg_mouse_event_signal.emit(gme)
 
 class MiniWindow(QtGui.QWidget):
     # a custom QT class derived from a QFrame, consisting of a paired QTextEdit object and QLabel object.  Together, they display the contents and name of a Buffer object.  constructor accepts a buffer object
@@ -310,17 +258,17 @@ class MiniWindow(QtGui.QWidget):
     def __init__(self):
         super(MiniWindow, self).__init__()
         # initialize layout
-        self.doc = GorgTextEdit()
-        self.doc.setMaximumHeight(16)
+        self._gte = GorgTextEdit()
+        self._gte.setMaximumHeight(16)
         self.setMaximumHeight(16)
         self._grid = QtGui.QGridLayout()
-        self._grid.addWidget(self.doc, 1, 1)
+        self._grid.addWidget(self._gte, 1, 1)
         self._grid.setSpacing(0)
         self._grid.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self._grid)
         # connect slots
-        self.doc.gorg_key_event_signal.connect(self._gorg_key_event)
-        self.doc.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
+        self._gte.gorg_key_event_signal.connect(self._gorg_key_event)
+        self._gte.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
         
     def _gorg_key_event(self, gke):
         gke.win = self
@@ -331,8 +279,69 @@ class MiniWindow(QtGui.QWidget):
         self.gorg_mouse_event_signal.emit(gme)
 
     def setFocus(self):
-        self.doc.setFocus()
+        self._gte.setFocus()
 
+    def gte(self):
+        return self._gte
+
+    def path(self):
+        myname = self.parent().name_from_obj(self)
+        parent_path = self.parent().path()
+        if parent_path:
+            mypath = parent_path + "/" + myname
+        else:
+            mypath = myname
+        return mypath
+
+    def update_view(self, interface):
+        self._gte.update_view(interface)
+    
+    def get_sub_paths(self):
+        return False
+
+class Window(QtGui.QWidget):
+    # a custom QT class derived from a QFrame, consisting of a paired QTextEdit object and QLabel object.  Together, they display the contents and name of a Buffer object.  constructor accepts a buffer object
+
+    gorg_key_event_signal = pyqtSignal(GorgKeyEvent)
+    gorg_mouse_event_signal = pyqtSignal(GorgMouseEvent)
+
+    def __init__(self):
+        super(Window, self).__init__()
+        # initialize layout
+        self._gte = GorgTextEdit()
+        policy = QtGui.QSizePolicy()
+        policy.setVerticalPolicy(QtGui.QSizePolicy.Ignored)
+        policy.setHorizontalPolicy(QtGui.QSizePolicy.Ignored)
+        self.setSizePolicy(policy)
+        self._label = GorgWindowLabel()
+        self._grid = QtGui.QGridLayout()
+        self._grid.addWidget(self._gte, 1, 1)
+        self._grid.addWidget(self._label, 2, 1)
+        self._grid.setSpacing(0)
+        self._grid.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self._grid)
+        # connect slots
+        self._gte.gorg_key_event_signal.connect(self._gorg_key_event)
+        self._gte.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
+    
+    def _gorg_key_event(self, gke):
+        gke.win = self
+        self.gorg_key_event_signal.emit(gke)
+
+    def _gorg_mouse_event(self, gme):
+        gme.win = self
+        self.gorg_mouse_event_signal.emit(gme)        
+
+    def setFocus(self):
+        self._gte.setFocus()
+
+    def update_view(self, interface):
+        self._gte.update_view(interface)
+        self._label.update_view(interface)
+
+    def gte(self):
+        return self._gte
+        
     def path(self):
         myname = self.parent().name_from_obj(self)
         parent_path = self.parent().path()
@@ -408,8 +417,6 @@ class GorgTextEdit(QtGui.QTextEdit):
         else:
             self._cursor.setPosition(focus.cursor().point())
         self.setTextCursor(self._cursor)
-        layout = self.document().firstBlock().layout()
-        line = layout.lineForTextPosition(self._cursor.position())
                 
     def keyPressEvent(self, e):
         gke = GorgKeyEvent("p", e.key(), self._cursor.position())
@@ -434,6 +441,26 @@ class GorgTextEdit(QtGui.QTextEdit):
         gme = GorgMouseEvent("m", pos)
         self.gorg_mouse_event_signal.emit(gme)
 
+class GorgWindowLabel(QtGui.QLabel):
+
+    def __init__(self):
+        super(GorgWindowLabel, self).__init__()
+        self.setAutoFillBackground(True)
+        self.setStyleSheet("QLabel { background-color : rgb(112, 128, 144); color : white; }")
+        self.setTextFormat(1)
+
+    def _setText(self, text):
+        string = "<b>" + text + "<b>"
+        self.setText(string)
+
+    def update_view(self, interface):
+        inter_name = interface.name()
+        focus = interface.getfocus()
+        focus_name = focus.name()
+        point = focus.cursor().point()
+        string = "::" + inter_name + "::" + focus_name + "::" + str(point)
+        self._setText(string)
+        
 def main():
     
     app = QtGui.QApplication(sys.argv)
