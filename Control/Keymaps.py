@@ -20,8 +20,6 @@ class Keymap():
             return False
 
     def match_input_event(self, e):
-        print(e.string)
-        print(self._dict)
         match = self.match(e.string)
         if match:
             self.invoke(match, e)

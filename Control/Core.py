@@ -36,6 +36,7 @@ class Commander():
         self.frame.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
 
         start_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
+        mini_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
         self.add_interface("start", start_interface)
 
         start_window = self.frame.obj_from_path("TOP/AAAAA")
@@ -44,7 +45,7 @@ class Commander():
         self.add_window("MINI", miniwindow)
         
         self.assign_window(start_window, start_interface)
-        self.assign_window(miniwindow, start_interface)
+        self.assign_window(miniwindow, mini_interface)
 
         self.frame.show()
 

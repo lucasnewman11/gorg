@@ -45,23 +45,22 @@ def delete(fie):
     cursor = gate.cursor()
     selection = cursor.selection()
     if len(selection) > 0:
-        _delete_text(gate, gate.start(), gate.end())
+        _delete_text(gate, cursor.start(), cursor.end())
     else:
         point = cursor.point()
         _delete_text(gate, point-1, point)
-    cursor.deactive_mark()
 
 def insert_new_line(fie):
     _insert_text(fie.gate, fie.gate.cursor().point(), "\n")
 
-def _move_point_only(cursor, pos):
-    cursor.setpoint(pos)
+def _move_point_only(cursor, pos, record):
+    cursor.setpoint(pos, record)
 
 def _move_mark_only(cursor, pos):
     cursor.setmark(pos)
 
-def _move_point(cursor, pos):
-    _move_point_only(cursor, pos)
+def _move_point(cursor, pos, record=True):
+    _move_point_only(cursor, pos, record)
     if not cursor.is_mark_active():
         _move_mark_only(cursor, pos)
 
@@ -135,57 +134,143 @@ def _start_of_line(fie):
     gte = fie.gie.win.doc
     cursor = fie.gate.cursor()
     point = cursor.point()
-    layout = gte.document().firstBlock().layout()
-    line = layout.lineForTextPosition(point)
-    pos = line.textStart()
-    # return pos
+    document = gte.document()
+    block = document.findBlock(point)
+    sub_point = point - block.position()
+    layout = block.layout()
+    line = layout.lineForTextPosition(sub_point)
+    this_layout_loc = (block.blockNumber(), line.lineNumber())
+    current_layout_loc = this_layout_loc
+    pos = point
+    while (current_layout_loc == this_layout_loc) and (pos != 0):
+        pos -= 1
+        block = document.findBlock(pos)
+        sub_pos = pos - block.position()
+        layout = block.layout()
+        line = layout.lineForTextPosition(sub_pos)
+        current_layout_loc = (block.blockNumber(), line.lineNumber())
+    return pos+1
 
 def _end_of_line(fie):
     gte = fie.gie.win.doc
-    cursor = fie.gate.cursor()
+    gate = fie.gate
+    text = gate.get_raw_text()
+    text_length = len(text)
+    cursor = gate.cursor()
     point = cursor.point()
-    layout = gte.document().firstBlock().layout()
-    line = layout.lineForTextPosition(point)
-    pos = line.textStart() + line.textLength() - 1
-    # return pos
-    
+    document = gte.document()
+    block = document.findBlock(point)
+    sub_point = point - block.position()
+    layout = block.layout()
+    line = layout.lineForTextPosition(sub_point)
+    this_layout_loc = (block.blockNumber(), line.lineNumber())
+    current_layout_loc = this_layout_loc
+    pos = point
+    while (current_layout_loc == this_layout_loc) and (pos != text_length):
+        pos += 1
+        block = document.findBlock(pos)
+        sub_pos = pos - block.position()
+        layout = block.layout()
+        line = layout.lineForTextPosition(sub_pos)
+        current_layout_loc = (block.blockNumber(), line.lineNumber())
+    return pos-1
+
 def move_point_start_of_line(fie):
     cursor = fie.gate.cursor()
     pos = _start_of_line(fie)
-    # _move_point(cursor, pos)    
-
+    _move_point(cursor, pos)
+    
 def move_point_end_of_line(fie):
     cursor = fie.gate.cursor()
     pos = _end_of_line(fie)
-    # _move_point(cursor, pos)
+    _move_point(cursor, pos)
 
 def move_point_next_line(fie):
     gte = fie.gie.win.doc
     cursor = fie.gate.cursor()
     point = cursor.point()
-    layout = gte.document().firstBlock().layout()
-    line = layout.lineForTextPosition(point)
-    target_line = layout.lineAt(line.lineNumber()+1)
+    document = gte.document()
+    block = document.findBlock(point)
+    sub_point = point - block.position()
+    layout = block.layout()
+    line = layout.lineForTextPosition(sub_point)
+    layout_loc = (block.blockNumber(), line.lineNumber())
     column = gte._cursor.columnNumber()
-    _move_point(cursor, target_line.textStart())
-    if target_line.textLength() > column:
-        _move_point(cursor, cursor.point() + column)
+    # if column == 0:
+    #     if cursor.lastpoint():
+    #         _move_point(cursor, cursor.lastpoint(), False)
+    #         gte.update_view(fie.inter)
+    #         column = gte._cursor.columnNumber()
+    #         _move_point(cursor, point, False)
+    block_length = block.length()
+    last_line = layout.lineForTextPosition(block_length-1)
+    last_line_number = last_line.lineNumber()
+    blocks = document.blockCount()
+    if layout_loc[1] == last_line_number:
+        if layout_loc[0]+1 < blocks:
+            target_layout_loc = (layout_loc[0]+1, 0)
+        else:
+            target_layout_loc = False
     else:
-        _move_point(cursor, target_line.textStart() + target_line.textLength() - 1)
+        target_layout_loc = (layout_loc[0], layout_loc[1]+1)
+    if target_layout_loc:
+        target_block = document.findBlockByNumber(target_layout_loc[0])
+        target_block_layout = target_block.layout()
+        target_line = target_block_layout.lineAt(target_layout_loc[1])
+        
+        _move_point(cursor, target_line.textStart() + target_block.position(), False)
+        if target_line.textLength() > column:
+            _move_point(cursor, cursor.point() + column)
+        else:
+            _move_point(cursor, cursor.point() + target_line.textLength())
+    else:
+        move_point_end_of_line(fie)
+
+def print_shit(fie):
+    True
     
 def move_point_previous_line(fie):
     gte = fie.gie.win.doc
     cursor = fie.gate.cursor()
     point = cursor.point()
-    layout = gte.document().firstBlock().layout()
-    line = layout.lineForTextPosition(point)
-    target_line = layout.lineAt(line.lineNumber()-1)
+    document = gte.document()
+    block = document.findBlock(point)
+    sub_point = point - block.position()
+    layout = block.layout()
+    line = layout.lineForTextPosition(sub_point)
+    layout_loc = (block.blockNumber(), line.lineNumber())
     column = gte._cursor.columnNumber()
-    _move_point(cursor, target_line.textStart())
-    if target_line.textLength() > column:
-        _move_point(cursor, cursor.point() + column)
+    if column == 0:
+        if cursor.lastpoint():
+            _move_point(cursor, cursor.lastpoint(), False)
+            gte.update_view(fie.inter)
+            column = gte._cursor.columnNumber()
+            _move_point(cursor, point, False)
+    block_length = block.length()
+    blocks = document.blockCount()
+    if layout_loc[1] == 0:
+        if layout_loc[0] != 0:
+            previous = block.previous()
+            previous_last_line = previous.layout().lineForTextPosition(previous.length()-1)
+            previous_last_line_number = previous_last_line.lineNumber()
+            target_layout_loc = (layout_loc[0]-1, previous_last_line_number)
+        else:
+            target_layout_loc = False
     else:
-        _move_point(cursor, target_line.textStart() + target_line.textLength() - 1)
+        target_layout_loc = (layout_loc[0], layout_loc[1]-1)
+
+    if target_layout_loc:
+        target_block = document.findBlockByNumber(target_layout_loc[0])
+        target_block_layout = target_block.layout()
+        target_line = target_block_layout.lineAt(target_layout_loc[1])
+        
+        _move_point(cursor, target_line.textStart() + target_block.position(), False)
+        if target_line.textLength() > column:
+            _move_point(cursor, cursor.point() + column)
+        else:
+            _move_point(cursor, cursor.point() + target_line.textLength())
+    else:
+        move_point_start_of_line(fie)
     
 def advance_point_by_sentence(fie):
     _advance_point_to_match(fie.gate, "\.\s")

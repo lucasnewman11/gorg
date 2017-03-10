@@ -83,7 +83,7 @@ class Frame(QtGui.QWidget):
 
         # set up presentation
 
-        self.setGeometry(600, 600, 700, 600)
+        self.setGeometry(600, 600, 80, 600)
         self.setWindowTitle('Gorg')
         self.show()
 

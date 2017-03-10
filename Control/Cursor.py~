@@ -9,7 +9,6 @@ class GateCursor():
         self._selection = {}
         self._ring = KillRing()
         self._mark_active = False
-        self._recent_points = []
 
     def point(self):
         return self._point
@@ -26,7 +25,7 @@ class GateCursor():
     def ring(self):
         return self._ring
         
-    def setpoint(self, pos, record=True):
+    def setpoint(self, pos):
         raw_text = self._gate.get_raw_text()
         if pos < 0:
             self._point = 0
@@ -34,20 +33,6 @@ class GateCursor():
             self._point = len(raw_text)
         else:
             self._point = pos
-        if record == True:
-            self._record_point()            
-
-    def _record_point(self):
-        self._recent_points.append(self._point)
-        if len(self._recent_points) > 10:
-            self._recent_points.pop(0)
-        
-    def lastpoint(self, n=2):
-        index = n*-1
-        try:
-            return self._recent_points[index]
-        except IndexError:
-            return False
 
     def setmark(self, pos):
         raw_text = self._gate.get_raw_text()
