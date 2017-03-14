@@ -10,6 +10,10 @@ class GateCursor():
         self._ring = KillRing()
         self._mark_active = False
         self._recent_points = []
+        self._properties = {"color" : "black",
+                            "bold" : False,
+                            "italics": False,
+                            "underline": False})
 
     def point(self):
         return self._point
@@ -25,8 +29,8 @@ class GateCursor():
 
     def ring(self):
         return self._ring
-        
-    def setpoint(self, pos, record=True):
+
+    def setPoint(self, pos, record=True):
         raw_text = self._gate.get_raw_text()
         if pos < 0:
             self._point = 0
@@ -35,21 +39,21 @@ class GateCursor():
         else:
             self._point = pos
         if record == True:
-            self._record_point()            
+            self._recordPoint()            
 
-    def _record_point(self):
+    def _recordPoint(self):
         self._recent_points.append(self._point)
         if len(self._recent_points) > 10:
             self._recent_points.pop(0)
         
-    def lastpoint(self, n=2):
+    def lastPoint(self, n=2):
         index = n*-1
         try:
             return self._recent_points[index]
         except IndexError:
             return False
 
-    def setmark(self, pos):
+    def setMark(self, pos):
         raw_text = self._gate.get_raw_text()
         if pos < 0:
             self._mark = 0
@@ -58,34 +62,45 @@ class GateCursor():
         else:
             self._mark = pos
 
-    def is_mark_active(self):
+    def isMarkActive(self):
         return self._mark_active
 
-    def activate_mark(self):
+    def activateMark(self):
         self._mark_active = True
 
-    def deactivate_mark(self):
+    def deactivateMark(self):
         self._mark_active = False
 
-    def update_selection(self):
-        self._start = min(self._point, self._mark)
-        self._end = max(self._point, self._mark)
+    def property(self, name):
+        return self._properties[name]
 
-        raw_text = self._gate.get_raw_text()
+    def setProperty(self, name, value):
+        self._properties[name] = value
 
-        if self._point < self._mark and self.is_mark_active():
-            self._selection = raw_text[self._point:self._mark]
-        elif self._point > self._mark and self.is_mark_active():
-            self._selection = raw_text[self._mark:self._point]
+    def properties(self):
+        return self._properties
+
+    def setProperties(self, properties):
+        self._properties = properties
+
+    def insertFragments(self, fragments, pos):
+        target = self._gate.frag_by_pos(pos)
+        target_start = self._gate.pos_by_frag(target)
+        adjusted_pos = pos - target_start
+        if adjusted_pos > 0:
+            new_fragments = target.split(adjusted_pos)
+            fragments.insert(0, new_fragments[0])
+            fragments.append(new_fragments[1])
+            self._gate.removeFragment(target)
+            self.insertFragments(new_fragments, target_start)
         else:
-            self._selection = ''
+            self._gate.addFragments(fragments, target_start)
+            self._gate.simplify()
 
-    def selection(self):
-        return self._selection
+    def killSelection(self, start, end, delete=False):
+        
 
-    def get_substring(self, start, end):
-        raw_text = self._gate.get_raw_text()
-        return raw_text[start:end]
+            
 
 class KillRing():
 
@@ -117,3 +132,49 @@ class KillRing():
     def remove(self, index):
         del self._members[index]
     
+class Fragment():
+
+    def __init__(self, text="", properties={"color" : "black",
+                                            "bold" : False,
+                                            "italics": False,
+                                            "underline": False})
+        self._text = text
+        self._properties = properties
+
+    def text(self):
+        return self._text
+
+    def setText(self, text):
+        self._text = text
+
+    def length(self):
+        return len(self._text)
+
+    def property(self, name):
+        return self._properties[name]
+
+    def setProperty(self, name, value):
+        self._properties[name] = value
+
+    def properties(self):
+        return self._properties
+
+    def setProperties(self, properties):
+        self._properties = properties
+
+    def split(self, pos):
+        text1 = self._text[:pos]
+        text2 = self._text[pos:]
+        frag1 = Fragment(text1, self._properties)
+        frag2 = Fragment(text2, self._properties)
+        return (frag1, frag2)
+
+    def absorb(self, fragment):
+        if fragment.properties() != self._properties:
+            print("Fragments can only absorb other fragments with identical properties.")
+            raise ValueError
+        self._text += fragment.text()
+
+        
+
+
