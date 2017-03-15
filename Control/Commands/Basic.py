@@ -1,13 +1,17 @@
-from Control.Cursor import Fragment
+from Control.Cursor import Fragment, Region
 
 def _insert_text(gate, pos, addition):
     cursor = gate.cursor()
     properties = cursor.properties()
-    frag = Fragment(addition, properties)
-    cursor.insertFragments(frag)
-
-def hello(fie):
-    _insert_text(fie.gate, fie.gate.cursor().point(), "hello")
+    # creates the Region object containing the text fragment
+    fragments = [Fragment(addition, properties)]
+    region = Region(fragments)
+    # inserts the Region object into the target gate
+    cursor.insert_region(region, pos)
+    # adjusts the position of point if necessary
+    point = cursor.point()
+    if pos <= point:
+        _move_point(cursor, len(addition))
     
 def insert_character(fie):
     string = fie.string
@@ -23,23 +27,17 @@ def _delete_text(gate, start, end):
     cursor = gate.cursor()
     point = cursor.point()
     mark = cursor.mark()
-    text_list = list(gate.get_raw_text())
-    new_text_list = text_list[:start] + text_list[end:]
-    gate.set_raw_text("".join(new_text_list))
+    selection = cursor.selection(start, end, remove=True)
     if end < point:
-        cursor.setpoint(point - (end - start))
+        _move_point(cursor, (point - (end - start)))
     elif end >= point and start < point:
-        cursor.setpoint(start)
-    if end < mark:
-        cursor.setmark(mark - (end - start))
-    elif end >= mark and start < mark:
-        cursor.setmark(start)
+        _move_point(cursor, start)
     cursor.deactivate_mark()
     
 def delete(fie):
     gate = fie.gate
     cursor = gate.cursor()
-    selection = cursor.selection()
+    selection = cursor.selection(cursor.start(), cursor.end())
     if len(selection) > 0:
         _delete_text(gate, cursor.start(), cursor.end())
     else:
@@ -98,7 +96,7 @@ def _search_string_backwards(pattern, string):
     return match_pos
 
 def _advance_point_to_match(gate, pattern):
-    text = gate.get_raw_text()
+    text = gate.region().raw_text()
     cursor = gate.cursor()
     point = cursor.point()
     remaining = text[point:]
@@ -107,7 +105,7 @@ def _advance_point_to_match(gate, pattern):
     _move_point(cursor, pos)
 
 def _retreat_point_to_match(gate, pattern):
-    text = gate.get_raw_text()
+    text = gate.region().raw_text()
     cursor = gate.cursor()
     point = cursor.point()
     remaining = text[:point]
@@ -294,11 +292,10 @@ def kill_region(fie):
     gate = fie.gate
     cursor = gate.cursor()
     ring = cursor.ring()
-    selection = cursor.selection()
     start = cursor.start()
     end = cursor.end()
+    selection = cursor.selection(start, end, remove=True)
     ring.add(selection)
-    _delete_text(gate, start, end)
 
 def kill_line(fie):
     gate = fie.gate
@@ -306,8 +303,8 @@ def kill_line(fie):
     point = cursor.point()
     ring = cursor.ring()
     end_of_line = _end_of_line(fie)
-    substring = cursor.get_substring(point, end_of_line)
-    ring.add(substring)
+    selection = cursor.selection(point, end_of_line, remove=True)
+    ring.add(selection)
     _delete_text(gate, point, end_of_line)
 
 def yank(fie):
@@ -316,7 +313,7 @@ def yank(fie):
     point = cursor.point()
     ring = cursor.ring()
     attempt = ring.get()
-    _insert_text(gate, point, attempt)
+    cursor.insert_region(attempt, point)
     gate.set_active_keymap(fie.commander.keymaps()["Yank"])
     
 def yank_next(fie):
@@ -326,14 +323,15 @@ def yank_next(fie):
     ring = cursor.ring()
     # deletes last yank attempt
     current = ring.get()
-    start_of_current = point - len(current)
+    start_of_current = point - current.length()
     _delete_text(gate, start_of_current, point)
     point = cursor.point()
     # updates ring
     ring.next_index()
+    # attempts next yank
     attempt = ring.get()
-    _insert_text(gate, point, attempt)
-        
+    cursor.insert_region(attempt, point)
+
 def yank_previous(fie):
     gate = fie.gate
     cursor = gate.cursor()
@@ -347,7 +345,7 @@ def yank_previous(fie):
     # updates ring
     ring.previous_index()
     attempt = ring.get()
-    _insert_text(gate, point, attempt)
+    cursor.insert_region(attempt, point)
 
 def yank_pop(fie):
     gate = fie.gate
