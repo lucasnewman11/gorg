@@ -17,12 +17,12 @@ class FullInputEvent():
 class Commander():
     # the top level controller class
 
-    def __init__(self, keymaps_dict, blueprints_dict):
+    def __init__(self, keymaps_dict, interface_blueprints_dict):
         super(Commander, self).__init__()
 
         # initialize basics
         self._keymaps = keymaps_dict
-        self._blueprints = blueprints_dict
+        self._blueprints = interface_blueprints_dict
         self._handler = KeyEventHandler()
         self._windows = {}
         self._interfaces = {}
@@ -35,8 +35,8 @@ class Commander():
         self.frame.gorg_key_event_signal.connect(self._gorg_key_event)
         self.frame.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
 
-        start_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
-        mini_interface = self._blueprints["Simple_Text"].interface(self._keymaps)
+        start_interface = self._blueprints["Simple_Text"].materialize(self._keymaps)
+        mini_interface = self._blueprints["Simple_Text"].materialize(self._keymaps)
         self.add_interface("start", start_interface)
 
         start_window = self.frame.obj_from_path("TOP/AAAAA")

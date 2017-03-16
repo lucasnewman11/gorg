@@ -3,7 +3,6 @@
 (bind Top Ctrl-2 split_window_horizontal)
 (bind Top Ctrl-3 split_window_vertical)
 (bind Top Ctrl-4 change_window_focus)
-(bind Basic_Text Ctrl-H hello)
 (bind Basic_Text (Shft-)?[!-~] insert_character)
 (bind Basic_Text Spc insert_space)
 (bind Basic_Text Bkspc delete)

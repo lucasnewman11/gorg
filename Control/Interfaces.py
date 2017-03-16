@@ -28,7 +28,7 @@ class Interface():
     def add(self, name, sub):
         self._subordinates[name] = sub
         self._order.append(name)
-        sub.setParent(self)
+        sub.set_parent(self)
 
     def sub_by_name(self, name):
         return self._subordinates[name]
@@ -51,15 +51,16 @@ class Interface():
     def fragments(self):
         fragments = []
         for i in self._order:
-            fragments.append(self._subordinates[i].fragments())
+            fragments.extend(self._subordinates[i].fragments())
+        print(self._subordinates)
         return fragments
         
     def process_full_input_event(self, fie):
         fie.inter.append(self)
         point = fie.gie.pos
-        sub = self.subByPos(point)
-        sub.processFullInputEvent(fie)
-        self.setFocus(sub)
+        sub = self.sub_by_pos(point)
+        sub.process_full_input_event(fie)
+        self.set_focus(sub)
 
 class Gate():
 
@@ -82,18 +83,18 @@ class Gate():
     def parent(self):
         return self._parent
 
-    def set_parent(self):
+    def set_parent(self, parent):
         self._parent = parent
 
     def region(self):
         return self._region
 
-    def set_region(self):
+    def set_region(self, region):
         self._region = region
 
     def cursor(self):
         return self._cursor
-
+    
     def read_only(self):
         return self._read_only
 
@@ -118,10 +119,18 @@ class Gate():
     def set_primary_map(self, keymap):
         self._primary_keymap = keymap
 
+    def length(self):
+        return self.region().length()
+
+    def fragments(self):
+        print("FROM GATE", self._cursor.point())
+        print("FRAGS", self.region().fragments())
+        return self.region().fragments()
+
     def process_full_input_event(self, fie):
         fie.gate = self
         self._active_keymap.match_input_event(fie)
-        self.cursor().update_selection()
+      
 
 class InterfaceBlueprint():
 
@@ -151,7 +160,8 @@ class InterfaceBlueprint():
 
     def add(self, name, sub):
         self._subordinates[name] = sub
-
+        self._order.append(name)
+        
     def sub_by_name(self, name):
         return self._subordinates[name]
 
@@ -162,7 +172,7 @@ class InterfaceBlueprint():
             blueprint = self.sub_by_name(i)
             subordinate = blueprint.materialize(keymaps_dict)
             interface.add(subordinate.name(), subordinate)
-        interface.set_focus(interface.sub_by_name(self.focus()))
+        interface.set_focus(interface.sub_by_name(self.focus_name()))
         return interface
 
 class GateBlueprint():
@@ -173,7 +183,6 @@ class GateBlueprint():
         self._read_only = False
         self._crop = False
         self._keymap_name = False
-
 
     def name(self):
         return self._name
@@ -194,7 +203,7 @@ class GateBlueprint():
         self._read_only = read_only
 
     def crop(self):
-        return crop
+        return self._crop
 
     def set_crop(self, crop):
         self._crop = crop
@@ -211,16 +220,17 @@ class GateBlueprint():
         # initializes fragments
         for i in self.fragment_dicts():
             text = i["text"]
-            properties = [v for k, v in i.items() if k != "text"]
+            properties = {k:v for k, v in i.items() if k != "text"}
             fragment = Fragment(text, properties)
             gate.region().add_fragment(fragment)
         # initializes gate properties
         gate.set_read_only(self.read_only())
         gate.set_crop(self.crop())
         # initializes gate keymaps
-        keymap = keymaps_dict[self.keymaps_name()]
+        keymap = keymaps_dict[self.keymap_name()]
         gate.set_active_map(keymap)
         gate.set_primary_map(keymap)
+        return gate
         
 def make_interface_blueprints_dict_from_file(fyl, gate_blueprints_dict):
     json_dict = json.load(fyl)
@@ -248,11 +258,35 @@ def make_interface_blueprints_dict_from_file(fyl, gate_blueprints_dict):
             new_blue.add(sub_name, sub)
         focus_name = properties["focus"]
         new_blue.set_focus_name(focus_name)
+        interface_blueprints_dict[i] = new_blue
     return interface_blueprints_dict
         
 def make_gate_blueprints_dict_from_file(fyl):
+    json_dict = json.load(fyl)
+    gate_blueprints_dict = {}
+    for i in json_dict:
+        new_blue = GateBlueprint()
+        new_blue.set_name(i)
+        properties = json_dict[i]
+        # fragments
+        fragments = properties["fragments"]
+        for j in fragments:
+            new_blue.add_fragment_dict(j)
+        # read only
+        read_only = properties["read_only"]
+        new_blue.set_read_only(read_only)
+        # crop
+        crop = properties["crop"]
+        new_blue.set_crop(crop)
+        # keymap
+        keymap_name = properties["keymap"]
+        new_blue.set_keymap_name(keymap_name)
+        # appends to main dict
+        gate_blueprints_dict[i] = new_blue
+    return gate_blueprints_dict
         
-    
+        
+            
 
     
             

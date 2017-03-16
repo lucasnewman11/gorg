@@ -362,14 +362,15 @@ class GorgTextEdit(QtGui.QTextEdit):
 
     def __init__(self):
         super(GorgTextEdit, self).__init__()
-        self._cursor = self.textCursor()
+        self._qtextcursor = self.textCursor()
         self._last_selection = {}
         
     def _select_text(self, start, end):
-        self._cursor.setPosition(start)
-        self._cursor.setPosition(end, mode = 1)
+        self._qtextcursor.setPosition(start)
+        self._qtextcursor.setPosition(end, mode = 1)
         
     def _update_selected_text_properties(self, prop_dict):
+        print(prop_dict)
         # sets color
         colors = {"black": Qt.black,
                   "white": Qt.white,
@@ -402,28 +403,33 @@ class GorgTextEdit(QtGui.QTextEdit):
         
     def update_view(self, interface):
         self.clear()
-        text_list = interface.get_full_text()
-        for i in text_list:
-            length = len(i[0])
-            self.insertPlainText(i[0])
-            pos = self._cursor.position()
+        fragments = interface.fragments()
+        print(fragments)
+        for i in fragments:
+            text = i.text()
+            length = i.length()
+            properties = i.properties()
+            print("HERE", text, length, properties)
+            self.insertPlainText(text)
+            pos = self._qtextcursor.position()
             self._select_text(pos - length, pos)
-            self._update_selected_text_properties(i[1])
-            self._cursor.clearSelection()
-        focus = interface.getfocus()
+            self._update_selected_text_properties(properties)
+            self._qtextcursor.clearSelection()
+        focus = interface.focus()
+        print(focus, focus.cursor().point())
         if focus.cursor().is_mark_active():
-            self._cursor.setPosition(focus.cursor().mark())
-            self._cursor.setPosition(focus.cursor().point(), 1)
+            self._qtextcursor.setPosition(focus.cursor().mark())
+            self._qtextcursor.setPosition(focus.cursor().point(), 1)
         else:
-            self._cursor.setPosition(focus.cursor().point())
-        self.setTextCursor(self._cursor)
+            self._qtextcursor.setPosition(focus.cursor().point())
+        self.setTextCursor(self._qtextcursor)
                 
     def keyPressEvent(self, e):
-        gke = GorgKeyEvent("p", e.key(), self._cursor.position())
+        gke = GorgKeyEvent("p", e.key(), self._qtextcursor.position())
         self.gorg_key_event_signal.emit(gke)
      
     def keyReleaseEvent(self, e):
-        gke = GorgKeyEvent("r", e.key(), self._cursor.position())
+        gke = GorgKeyEvent("r", e.key(), self._qtextcursor.position())
         self.gorg_key_event_signal.emit(gke)
 
     def mousePressEvent(self, e):
@@ -455,7 +461,7 @@ class GorgWindowLabel(QtGui.QLabel):
 
     def update_view(self, interface):
         inter_name = interface.name()
-        focus = interface.getfocus()
+        focus = interface.focus()
         focus_name = focus.name()
         point = focus.cursor().point()
         string = "::" + inter_name + "::" + focus_name + "::" + str(point)

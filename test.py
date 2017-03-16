@@ -18,9 +18,12 @@ gorg_network = gorg_directory.getlast()
 
 # current app 
 Gorg = QtGui.QApplication(sys.argv)
+
 keymaps = Control.Keymaps.make_keymaps_dict_from_file(open("Control/keymaps.txt", "r"))
-blueprints = Control.Interfaces.make_blueprints_dict_from_file(open("Control/blueprints.txt", "r"))
-commander1 = Control.Core.Commander(keymaps, blueprints)
+gate_blueprints = Control.Interfaces.make_gate_blueprints_dict_from_file(open("Control/gates.txt", "r"))
+interface_blueprints = Control.Interfaces.make_interface_blueprints_dict_from_file(open("Control/interfaces.txt", "r"), gate_blueprints)
+
+commander1 = Control.Core.Commander(keymaps, interface_blueprints)
 sys.exit(Gorg.exec_())
 
 

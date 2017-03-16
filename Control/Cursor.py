@@ -13,7 +13,7 @@ class GateCursor():
         self._properties = {"color" : "black",
                             "bold" : False,
                             "italics": False,
-                            "underline": False})
+                            "underline": False}
 
     def point(self):
         return self._point
@@ -35,15 +35,16 @@ class GateCursor():
         self._end = max(self._point, self._mark)
 
     def set_point(self, pos, record=True):
-        raw_text = self._gate.get_raw_text()
+        print("POSITION", pos, record)
+        length = self._gate.length()
         if pos < 0:
             self._point = 0
-        elif pos > len(raw_text):
-            self._point = len(raw_text)
+        elif pos > length:
+            self._point = length
         else:
             self._point = pos
         if record == True:
-            self._recordPoint()
+            self._record_point()
         self._update_selection_points()
 
     def _record_point(self):
@@ -59,11 +60,11 @@ class GateCursor():
             return False
 
     def set_mark(self, pos):
-        raw_text = self._gate.get_raw_text()
+        length = self._gate.length()
         if pos < 0:
             self._mark = 0
-        elif pos > len(raw_text):
-            self._mark = len(raw_text)
+        elif pos > length:
+            self._mark = length
         else:
             self._mark = pos
         self._update_selection_points()
@@ -111,12 +112,12 @@ class GateCursor():
     def insert_region(self, region, pos):
         gate_region = self._gate.region()
         following_index = self._split_frag_at_pos(pos)
-        gate_region.absorb(self, region, following_index)
+        gate_region.absorb(region, following_index)
 
     def selection(self, start, end, remove=False):
         gate_region = self._gate.region()
-        start_following_index = gate_region._split_frag_at_pos(start)
-        end_following_index = gate_region._split_frag_at_pos(end)
+        start_following_index = self._split_frag_at_pos(start)
+        end_following_index = self._split_frag_at_pos(end)
         sequence = [gate_region.frag_by_index(i) for i in range(start_following_index,
                                                        end_following_index)]
         if remove:
@@ -237,7 +238,7 @@ class Region():
             target = self._fragments[index+1]
             if frag.properties() == target.properties():
                 frag.absorb(target)
-                self.removeFragment(target)
+                self.remove_fragment(target)
             else:
                 index += 1
                 frag = self._fragments[index]
@@ -252,7 +253,7 @@ class Fragment():
     def __init__(self, text="", properties={"color" : "black",
                                             "bold" : False,
                                             "italics": False,
-                                            "underline": False})
+                                            "underline": False}):
         self._text = text
         self._properties = properties
 
