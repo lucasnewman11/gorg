@@ -11,7 +11,8 @@ def _insert_text(gate, pos, addition):
     # adjusts the position of point if necessary
     point = cursor.point()
     if pos <= point:
-        _move_point(cursor, len(addition))
+        print("CLAUSE", pos, point)
+        _move_point(cursor, point + len(addition))
     
 def insert_character(fie):
     string = fie.string
@@ -38,7 +39,7 @@ def delete(fie):
     gate = fie.gate
     cursor = gate.cursor()
     selection = cursor.selection(cursor.start(), cursor.end())
-    if len(selection) > 0:
+    if selection.length() > 0:
         _delete_text(gate, cursor.start(), cursor.end())
     else:
         point = cursor.point()
@@ -48,10 +49,10 @@ def insert_new_line(fie):
     _insert_text(fie.gate, fie.gate.cursor().point(), "\n")
 
 def _move_point_only(cursor, pos, record):
-    cursor.setpoint(pos, record)
+    cursor.set_point(pos, record)
 
 def _move_mark_only(cursor, pos):
-    cursor.setmark(pos)
+    cursor.set_mark(pos)
 
 def _move_point(cursor, pos, record=True):
     _move_point_only(cursor, pos, record)
@@ -148,8 +149,7 @@ def _start_of_line(fie):
 def _end_of_line(fie):
     gte = fie.gie.win.gte()
     gate = fie.gate
-    text = gate.get_raw_text()
-    text_length = len(text)
+    text_length = gate.region().length()
     cursor = gate.cursor()
     point = cursor.point()
     document = gte.document()
@@ -189,12 +189,12 @@ def move_point_next_line(fie):
     layout = block.layout()
     line = layout.lineForTextPosition(sub_point)
     layout_loc = (block.blockNumber(), line.lineNumber())
-    column = gte._cursor.columnNumber()
+    column = gte._qtextcursor.columnNumber()
     # if column == 0:
     #     if cursor.lastpoint():
     #         _move_point(cursor, cursor.lastpoint(), False)
     #         gte.update_view(fie.inter)
-    #         column = gte._cursor.columnNumber()
+    #         column = gte._qtextcursor.columnNumber()
     #         _move_point(cursor, point, False)
     block_length = block.length()
     last_line = layout.lineForTextPosition(block_length-1)
@@ -233,12 +233,12 @@ def move_point_previous_line(fie):
     layout = block.layout()
     line = layout.lineForTextPosition(sub_point)
     layout_loc = (block.blockNumber(), line.lineNumber())
-    column = gte._cursor.columnNumber()
+    column = gte._qtextcursor.columnNumber()
     if column == 0:
         if cursor.lastpoint():
             _move_point(cursor, cursor.lastpoint(), False)
             gte.update_view(fie.inter)
-            column = gte._cursor.columnNumber()
+            column = gte._qtextcursor.columnNumber()
             _move_point(cursor, point, False)
     block_length = block.length()
     blocks = document.blockCount()
@@ -280,12 +280,12 @@ def set_mark(fie):
     point = cursor.point()
     mark = cursor.mark()
     if point != mark:
-        cursor.setmark(point)
+        cursor.set_mark(point)
         cursor.activate_mark()
     elif point == mark and not cursor.is_mark_active():
         cursor.activate_mark()
     elif point == mark and cursor.is_mark_active():
-        cursor.setmark(point)
+        cursor.set_mark(point)
         cursor.deactivate_mark()
 
 def kill_region(fie):
@@ -314,7 +314,7 @@ def yank(fie):
     ring = cursor.ring()
     attempt = ring.get()
     cursor.insert_region(attempt, point)
-    gate.set_active_keymap(fie.commander.keymaps()["Yank"])
+    gate.set_active_map(fie.commander.keymaps()["Yank"])
     
 def yank_next(fie):
     gate = fie.gate
@@ -349,13 +349,13 @@ def yank_previous(fie):
 
 def yank_pop(fie):
     gate = fie.gate
-    gate.set_active_keymap(gate.primary_keymap())
+    gate.set_active_map(gate.primary_map())
     ring = gate.cursor().ring()
     ring.remove(ring.index())
 
 def yank_place(fie):
     gate = fie.gate
-    gate.set_active_keymap(gate.primary_keymap())
+    gate.set_active_map(gate.primary_map())
 
 def yank_cancel(fie):
     gate = fie.gate
@@ -367,7 +367,7 @@ def yank_cancel(fie):
     start_of_current = point - len(current)
     _delete_text(gate, start_of_current, point)
     # resets keymap
-    gate.set_active_keymap(gate.primary_keymap())
+    gate.set_active_map(gate.primary_map())
 
 
 
