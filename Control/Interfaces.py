@@ -52,7 +52,6 @@ class Interface():
         fragments = []
         for i in self._order:
             fragments.extend(self._subordinates[i].fragments())
-        print(self._subordinates)
         return fragments
         
     def process_full_input_event(self, fie):
@@ -120,13 +119,31 @@ class Gate():
         self._primary_keymap = keymap
 
     def length(self):
-        return self.region().length()
+        return self._region.length()
 
     def fragments(self):
-        print("FROM GATE", self._cursor.point())
-        print("FRAGS", self.region().fragments())
-        return self.region().fragments()
+        return self._region.fragments()
 
+    def insert_region(self, region, pos):
+        length = region.length()
+        point = self._cursor.point()
+        self._region.insert_region_at_pos(region, pos)
+        if point >= pos:
+            self._cursor.set_point(point + length)
+
+    def selection(self, start, end, remove=False):
+        selection = self._region.selection(start, end, remove)
+        length = selection.length()
+        point = self._cursor.point()
+        if remove:
+            self._cursor.deactivate_mark()
+            if point > end:
+                self._cursor.set_point(point-length)
+            elif point >= start:
+                self._cursor.set_point(start)
+                
+        return selection
+            
     def process_full_input_event(self, fie):
         fie.gate = self
         self._active_keymap.match_input_event(fie)

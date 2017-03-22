@@ -83,7 +83,7 @@ class Frame(QtGui.QWidget):
 
         # set up presentation
 
-        self.setGeometry(600, 600, 80, 600)
+        self.setGeometry(600, 600, 700, 600)
         self.setWindowTitle('Gorg')
         self.show()
 
@@ -370,8 +370,11 @@ class GorgTextEdit(QtGui.QTextEdit):
         self._qtextcursor.setPosition(end, mode = 1)
         
     def _update_selected_text_properties(self, prop_dict):
-        print(prop_dict)
         # sets color
+        print("PROP_DICT", prop_dict)
+        print(self._qtextcursor.selectedText())
+        print(self._qtextcursor.selectionStart(), self._qtextcursor.selectionEnd())
+        charformat = QtGui.QTextCharFormat()
         colors = {"black": Qt.black,
                   "white": Qt.white,
                   "red": Qt.red,
@@ -381,48 +384,55 @@ class GorgTextEdit(QtGui.QTextEdit):
                   "yellow": Qt.yellow,
                   "green": Qt.green}
         text_color = QtGui.QColor(colors[prop_dict["color"]])
-        self.setTextColor(text_color)
+        brush = QtGui.QBrush()
+        brush.setColor(text_color)
+        charformat.setForeground(brush)
 
         # sets bold
         if prop_dict["bold"] == True:
-            self.setFontWeight(75)
+            print("yes")
+            charformat.setFontWeight(75)
         else:
-            self.setFontWeight(50)
+            print("no")
+            charformat.setFontWeight(50)
 
         # sets italic
         if prop_dict["italics"] == True:
-            self.setFontItalic(True)
+            charformat.setFontItalic(True)
         else:
-            self.setFontItalic(False)
+            charformat.setFontItalic(False)
 
-        #sets underline
+        # sets underline
         if prop_dict["underline"] == True:
-            self.setFontUnderline(True)
+            charformat.setFontUnderline(True)
         else:
-            self.setFontUnderline(False)
-        
+            charformat.setFontUnderline(False)
+
+        # updates the selected text by setting the char format
+        self._qtextcursor.setCharFormat(charformat)
+
     def update_view(self, interface):
         self.clear()
         fragments = interface.fragments()
-        print(fragments)
+        num = 0
         for i in fragments:
             text = i.text()
             length = i.length()
-            properties = i.properties()
-            print("HERE", text, length, properties)
+            text_properties = i.text_properties()
+            print(i, text, text_properties)
             self.insertPlainText(text)
-            pos = self._qtextcursor.position()
-            self._select_text(pos - length, pos)
-            self._update_selected_text_properties(properties)
+            self._select_text(num, num+length)
+            self._update_selected_text_properties(text_properties)
             self._qtextcursor.clearSelection()
+            num += length
         focus = interface.focus()
-        print(focus, focus.cursor().point())
         if focus.cursor().is_mark_active():
             self._qtextcursor.setPosition(focus.cursor().mark())
             self._qtextcursor.setPosition(focus.cursor().point(), 1)
         else:
             self._qtextcursor.setPosition(focus.cursor().point())
         self.setTextCursor(self._qtextcursor)
+        print("######################################################")
                 
     def keyPressEvent(self, e):
         gke = GorgKeyEvent("p", e.key(), self._qtextcursor.position())
@@ -464,7 +474,7 @@ class GorgWindowLabel(QtGui.QLabel):
         focus = interface.focus()
         focus_name = focus.name()
         point = focus.cursor().point()
-        string = "::" + inter_name + "::" + focus_name + "::" + str(point)
+        string = " :: " + inter_name + " :: " + focus_name + " :: " + str(point) 
         self._setText(string)
         
 def main():

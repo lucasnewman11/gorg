@@ -10,7 +10,7 @@ class GateCursor():
         self._ring = KillRing()
         self._mark_active = False
         self._recent_points = []
-        self._properties = {"color" : "black",
+        self._text_properties = {"color" : "black",
                             "bold" : False,
                             "italics": False,
                             "underline": False}
@@ -34,8 +34,13 @@ class GateCursor():
         self._start = min(self._point, self._mark)
         self._end = max(self._point, self._mark)
 
-    def set_point(self, pos, record=True):
-        print("POSITION", pos, record)
+    def _update_text_properties(self):
+        from copy import deepcopy
+        fragment = self._gate.region().frag_by_pos(self._point, start=False)
+        if fragment:
+            self.set_text_properties(deepcopy(fragment.text_properties()))
+
+    def set_point(self, pos, record=True, mark_also=True):
         length = self._gate.length()
         if pos < 0:
             self._point = 0
@@ -45,6 +50,10 @@ class GateCursor():
             self._point = pos
         if record == True:
             self._record_point()
+        if mark_also == True:
+            if not self.is_mark_active():
+                self.set_mark(pos)
+        self._update_text_properties()
         self._update_selection_points()
 
     def _record_point(self):
@@ -78,54 +87,17 @@ class GateCursor():
     def deactivate_mark(self):
         self._mark_active = False
 
-    def property(self, name):
-        return self._properties[name]
+    def text_property(self, name):
+        return self._text_properties[name]
 
-    def set_property(self, name, value):
-        self._properties[name] = value
+    def set_text_property(self, name, value):
+        self._text_properties[name] = value
 
-    def properties(self):
-        return self._properties
+    def text_properties(self):
+        return self._text_properties
 
-    def set_properties(self, properties):
-        self._properties = properties
-
-    def _split_frag_at_pos(self, pos):
-        # Returns the fragment index which begins at pos.  If pos lands in the middle of a fragment, splits the fragment and then returns.  With overwrite as True, will replace the fragment at position with the new fragments.  If pos is at the end of the gate, returns an index equal to the length of the fragments list.
-        gate_region = self._gate.region()
-        target = gate_region.frag_by_pos(pos)
-        if target:
-            target_index = gate_region.index_by_frag(target)
-            target_start = gate_region.pos_by_frag(target)
-            adjusted_pos = pos - target_start
-            if adjusted_pos > 0:
-                new_fragments = target.split(adjusted_pos)
-                new_region = Region()
-                new_region.add_fragments
-                gate_region.remove_fragment(target)
-                gate_region.add_fragments(new_fragments, target_index)
-                target_index += 1
-        else:
-            target_index = len(gate_region.fragments())
-        return target_index
-        
-    def insert_region(self, region, pos):
-        gate_region = self._gate.region()
-        following_index = self._split_frag_at_pos(pos)
-        gate_region.absorb(region, following_index)
-
-    def selection(self, start, end, remove=False):
-        gate_region = self._gate.region()
-        start_following_index = self._split_frag_at_pos(start)
-        end_following_index = self._split_frag_at_pos(end)
-        sequence = [gate_region.frag_by_index(i) for i in range(start_following_index,
-                                                       end_following_index)]
-        if remove:
-            for i in sequence:
-                gate_region.remove_fragment(i)
-        gate_region.simplify()
-        selection = Region(sequence)
-        return selection
+    def set_text_properties(self, properties):
+        self._text_properties = properties
                         
 class KillRing():
 
@@ -171,25 +143,38 @@ class Region():
             num += i.length()
         return num
 
-    def raw_text(self):
+    def text(self):
         text = ""
         for i in self._fragments:
             text += i.text()
         return text
 
-    def frag_by_pos(self, pos):
+    def frag_by_pos(self, pos, start=True):
+        "Returns the fragment which contains pos.  By default, will return the fragment which starts at pos, and false if position is at end of the region. With start set to False, will instead return the fragment which ends at pos, and False if position is at the start of the region."
+
         num = 0
-        for i in self._fragments:
-            length = i.length()
-            num += length
-            if num > pos:
-                return i
-        if num == self.length():
-            print("Position is at end of region.")
-            return False
+        if start:
+            for i in self._fragments:
+                length = i.length()
+                num += length
+                if num > pos:
+                    return i
+            if pos == self.length():
+                return False
+            else:
+                print("Position is outside of region.")
+                raise ValueError
         else:
-            print("Position is too large for region.")
-            raise ValueError
+            for i in self._fragments:
+                length = i.length()
+                num += length
+                if num >= pos:
+                    return i
+            if pos == 0:
+                return False
+            else:
+                print("Position is outside of region.")
+                raise ValueError
         
     def pos_by_frag(self, frag):
         num = 0
@@ -209,53 +194,97 @@ class Region():
         if not index:
             self._fragments.append(fragment)
         else:
-            try:
-                self._fragments.insert(index, fragment)
-            except IndexError:
-                self._fragments.append(fragment)
-
+            self._fragments.insert(index, fragment)
+            
     def add_fragments(self, fragments, index=False):
         # accepts list of fragments
         if not index:
             self._fragments.extend(fragments)
-        try:
+        else:
             self._fragments[index:index] = fragments
-        except IndexError:
-            self._fragments.extend(fragments)
         
     def remove_fragment(self, fragment):
-        try:
-            self._fragments.remove(fragment)
-        except IndexError:
-            print("Index number is too large for this gate.")
-            return False
+        self._fragments.remove(fragment)
 
-    def simplify(self):
-        index = 0
-        frag = self._fragments[index]
-        length = len(self._fragments)
-        while index < length-1:
-            target = self._fragments[index+1]
-            if frag.properties() == target.properties():
-                frag.absorb(target)
-                self.remove_fragment(target)
-            else:
-                index += 1
-                frag = self._fragments[index]
-            length = len(self._fragments)
+    def _split_frag(self, fragment, adjusted_pos, replace=True):
+        new_fragments = fragment.split(adjusted_pos)
+        if new_fragments and replace:
+            frag_index = self.index_by_frag(fragment)
+            self.remove_fragment(fragment)
+            self.add_fragments(new_fragments, frag_index)
+        
+    def _split_frag_at_pos(self, pos, replace=True):
+        target = self.frag_by_pos(pos)
+        if target:
+            target_start = self.pos_by_frag(target)
+            target_index = self.index_by_frag(target)
+            adjusted_pos = pos - target_start
+            if adjusted_pos > 0:
+                self._split_frag(target, adjusted_pos, replace)
+                                    
+    def insert_region_at_pos(self, region, pos):
+        self._split_frag_at_pos(pos)
+        target = self.frag_by_pos(pos)
+        if target:
+            target_index = self.index_by_frag(target)
+        else:
+            target_index = False
+        self.absorb(region, target_index)
 
+    def selection(self, start, end, remove=False):
+        self._split_frag_at_pos(start)
+        self._split_frag_at_pos(end)
+        start_target = self.frag_by_pos(start)
+        end_target = self.frag_by_pos(end)
+        # assigns start index
+        if start_target:
+            start_index = self.index_by_frag(start_target)
+        # assigns end index
+        if end_target:
+            end_index = self.index_by_frag(end_target)
+        # creates sublist of fragments
+
+        if start_target and end_target:
+            fragments = self._fragments[start_index:end_index]
+        elif start_target and not end_target:
+            fragments = self._fragments[start_index:]
+        else:
+            fragments = []
+        # removes fragments if necessary
+        if remove:
+            for i in fragments:
+                self.remove_fragment(i)
+        # creates and returns Region
+        selection_region = Region(fragments)
+
+        return selection_region
+        
     def absorb(self, region, index=False):
         self.add_fragments(region.fragments(), index)
         self.simplify()
+
+    def simplify(self):
+            index = 0
+            frag = self._fragments[index]
+            length = len(self._fragments)
+            while index < length-1 and length >= 2:
+                target = self.frag_by_index(index+1)
+                if frag.text_properties() == target.text_properties():
+                    frag.absorb(target)
+                    self.remove_fragment(target)
+                else:
+                    index += 1
+                    frag = self._fragments[index]
+                length = len(self._fragments)
         
 class Fragment():
 
-    def __init__(self, text="", properties={"color" : "black",
+    def __init__(self, text="", text_properties={"color" : "black",
                                             "bold" : False,
                                             "italics": False,
                                             "underline": False}):
         self._text = text
-        self._properties = properties
+        self._text_properties = text_properties
 
     def text(self):
         return self._text
@@ -266,28 +295,28 @@ class Fragment():
     def length(self):
         return len(self._text)
 
-    def property(self, name):
-        return self._properties[name]
+    def text_property(self, name):
+        return self._text_properties[name]
 
-    def set_property(self, name, value):
-        self._properties[name] = value
+    def set_text_property(self, name, value):
+        self._text_properties[name] = value
 
-    def properties(self):
-        return self._properties
+    def text_properties(self):
+        return self._text_properties
 
-    def set_properties(self, properties):
-        self._properties = properties
+    def set_text_properties(self, properties):
+        self._text_properties = properties
 
     def split(self, pos):
         text1 = self._text[:pos]
         text2 = self._text[pos:]
-        frag1 = Fragment(text1, self._properties)
-        frag2 = Fragment(text2, self._properties)
+        frag1 = Fragment(text1, self._text_properties)
+        frag2 = Fragment(text2, self._text_properties)
         return (frag1, frag2)
 
     def absorb(self, fragment):
-        if fragment.properties() != self._properties:
-            print("Fragments can only absorb other fragments with identical properties.")
+        if fragment.text_properties() != self._text_properties:
+            print("Fragments can only absorb other fragments with identical text_properties.")
             raise ValueError
         self._text += fragment.text()
 

@@ -29,6 +29,7 @@
 (map Basic)
 (add Basic Top)
 (add Basic Basic_Text)
+(bind Basic Ctrl-C portal_map)
 
 (map Yank)
 (bind Yank N yank_next)
@@ -36,4 +37,12 @@
 (bind Yank Ret yank_pop)
 (bind Yank Ctrl-Ret yank_place)
 (bind Yank Q yank_cancel)
+
+(map Portal)
+(bind Portal F fonts_map)
+
+(map Fonts)
+(bind Fonts B toggle_bold)
+(bind Fonts I toggle_italics)
+(bind Fonts U toggle_underline)
 

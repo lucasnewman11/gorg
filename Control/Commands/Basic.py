@@ -1,18 +1,17 @@
 from Control.Cursor import Fragment, Region
+from copy import deepcopy
+
+def basic_map(fie):
+    fie.gate.set_active_map(fie.commander.keymaps()["Basic"])
 
 def _insert_text(gate, pos, addition):
-    cursor = gate.cursor()
-    properties = cursor.properties()
+    properties = gate.cursor().text_properties()
+    new_properties = deepcopy(gate.cursor().text_properties())
     # creates the Region object containing the text fragment
-    fragments = [Fragment(addition, properties)]
+    fragments = [Fragment(addition, new_properties)]
     region = Region(fragments)
     # inserts the Region object into the target gate
-    cursor.insert_region(region, pos)
-    # adjusts the position of point if necessary
-    point = cursor.point()
-    if pos <= point:
-        print("CLAUSE", pos, point)
-        _move_point(cursor, point + len(addition))
+    gate.insert_region(region, pos)
     
 def insert_character(fie):
     string = fie.string
@@ -24,59 +23,61 @@ def insert_character(fie):
 def insert_space(fie):
     _insert_text(fie.gate, fie.gate.cursor().point(), " ")
 
-def _delete_text(gate, start, end):
-    cursor = gate.cursor()
-    point = cursor.point()
-    mark = cursor.mark()
-    selection = cursor.selection(start, end, remove=True)
-    if end < point:
-        _move_point(cursor, (point - (end - start)))
-    elif end >= point and start < point:
-        _move_point(cursor, start)
-    cursor.deactivate_mark()
-    
 def delete(fie):
     gate = fie.gate
     cursor = gate.cursor()
-    selection = cursor.selection(cursor.start(), cursor.end())
-    if selection.length() > 0:
-        _delete_text(gate, cursor.start(), cursor.end())
+    start = cursor.start()
+    end = cursor.end()
+    if (end - start) > 1:
+        gate.selection(start, end, remove=True)
     else:
         point = cursor.point()
-        _delete_text(gate, point-1, point)
+        gate.selection(point-1, point, remove=True)
 
 def insert_new_line(fie):
     _insert_text(fie.gate, fie.gate.cursor().point(), "\n")
 
-def _move_point_only(cursor, pos, record):
-    cursor.set_point(pos, record)
-
-def _move_mark_only(cursor, pos):
-    cursor.set_mark(pos)
-
-def _move_point(cursor, pos, record=True):
-    _move_point_only(cursor, pos, record)
-    if not cursor.is_mark_active():
-        _move_mark_only(cursor, pos)
+def toggle_bold(fie):
+    gate = fie.gate
+    cursor = fie.gate.cursor()
+    is_bold = cursor.text_property("bold")
+    cursor.set_text_property("bold", not is_bold)
+    gate.set_active_map(gate.primary_map())                                
+def toggle_italics(fie):
+    gate = fie.gate
+    cursor = fie.gate.cursor()
+    italics = cursor.text_property("italics")
+    print(italics)
+    print(not italics)
+    cursor.set_text_property("italics", not italics)
+    gate.set_active_map(gate.primary_map())                                                    
+def toggle_underline(fie):
+    gate = fie.gate
+    cursor = fie.gate.cursor()
+    underline = cursor.text_property("underline")
+    print(underline)
+    print(not underline)
+    cursor.set_text_property("underline", not underline)
+    gate.set_active_map(gate.primary_map())
 
 def move_point_to_click(fme):
     cursor = fme.gate.cursor()
-    _move_point(cursor, fme.gie.pos)
+    cursor.set_point(fme.gie.pos)
 
 def move_mark_to_mouse_location(fme):
     cursor = fme.gate.cursor()
     cursor.activate_mark()
-    _move_mark_only(cursor, fme.gie.pos)
+    cursor.set_mark(fme.gie.pos)
     
 def advance_point_by_char(fie):
     cursor = fie.gate.cursor()
     pos = cursor.point() + 1
-    _move_point(cursor, pos)
+    cursor.set_point(pos)
             
 def retreat_point_by_char(fie):
     cursor = fie.gate.cursor()
     pos = cursor.point() - 1
-    _move_point(cursor, pos)
+    cursor.set_point(pos)
 
 def _search_string_forwards(pattern, string):
     import re
@@ -97,21 +98,21 @@ def _search_string_backwards(pattern, string):
     return match_pos
 
 def _advance_point_to_match(gate, pattern):
-    text = gate.region().raw_text()
+    text = gate.region().text()
     cursor = gate.cursor()
     point = cursor.point()
     remaining = text[point:]
     relative_pos = _search_string_forwards(pattern, remaining)
     pos = point + relative_pos
-    _move_point(cursor, pos)
+    cursor.set_point(pos)
 
 def _retreat_point_to_match(gate, pattern):
-    text = gate.region().raw_text()
+    text = gate.region().text()
     cursor = gate.cursor()
     point = cursor.point()
     remaining = text[:point]
     pos = _search_string_backwards(pattern, remaining)
-    _move_point(cursor, pos)
+    cursor.set_point(pos)
 
 def advance_point_by_word(fie):
     gate = fie.gate
@@ -172,12 +173,12 @@ def _end_of_line(fie):
 def move_point_start_of_line(fie):
     cursor = fie.gate.cursor()
     pos = _start_of_line(fie)
-    _move_point(cursor, pos)
+    cursor.set_point(pos)
     
 def move_point_end_of_line(fie):
     cursor = fie.gate.cursor()
     pos = _end_of_line(fie)
-    _move_point(cursor, pos)
+    cursor.set_point(pos)
 
 def move_point_next_line(fie):
     gte = fie.gie.win.gte()
@@ -191,11 +192,11 @@ def move_point_next_line(fie):
     layout_loc = (block.blockNumber(), line.lineNumber())
     column = gte._qtextcursor.columnNumber()
     # if column == 0:
-    #     if cursor.lastpoint():
-    #         _move_point(cursor, cursor.lastpoint(), False)
-    #         gte.update_view(fie.inter)
+    #     if cursor.last_point():
+    #         cursor.set_point(cursor.last_point(), False)
+    #         gte.update_view(fie.inter[0])
     #         column = gte._qtextcursor.columnNumber()
-    #         _move_point(cursor, point, False)
+    #         cursor.set_point(point, False)
     block_length = block.length()
     last_line = layout.lineForTextPosition(block_length-1)
     last_line_number = last_line.lineNumber()
@@ -212,11 +213,11 @@ def move_point_next_line(fie):
         target_block_layout = target_block.layout()
         target_line = target_block_layout.lineAt(target_layout_loc[1])
         
-        _move_point(cursor, target_line.textStart() + target_block.position(), False)
+        cursor.set_point(target_line.textStart() + target_block.position(), False)
         if target_line.textLength() > column:
-            _move_point(cursor, cursor.point() + column)
+            cursor.set_point(cursor.point() + column)
         else:
-            _move_point(cursor, cursor.point() + target_line.textLength())
+            cursor.set_point(cursor.point() + target_line.textLength())
     else:
         move_point_end_of_line(fie)
 
@@ -235,11 +236,11 @@ def move_point_previous_line(fie):
     layout_loc = (block.blockNumber(), line.lineNumber())
     column = gte._qtextcursor.columnNumber()
     if column == 0:
-        if cursor.lastpoint():
-            _move_point(cursor, cursor.lastpoint(), False)
-            gte.update_view(fie.inter)
+        if cursor.last_point():
+            cursor.set_point(cursor.last_point(), False)
+            gte.update_view(fie.inter[0])
             column = gte._qtextcursor.columnNumber()
-            _move_point(cursor, point, False)
+            cursor.set_point(point, False)
     block_length = block.length()
     blocks = document.blockCount()
     if layout_loc[1] == 0:
@@ -258,11 +259,11 @@ def move_point_previous_line(fie):
         target_block_layout = target_block.layout()
         target_line = target_block_layout.lineAt(target_layout_loc[1])
         
-        _move_point(cursor, target_line.textStart() + target_block.position(), False)
+        cursor.set_point(target_line.textStart() + target_block.position(), False)
         if target_line.textLength() > column:
-            _move_point(cursor, cursor.point() + column)
+            cursor.set_point(cursor.point() + column)
         else:
-            _move_point(cursor, cursor.point() + target_line.textLength())
+            cursor.set_point(cursor.point() + target_line.textLength())
     else:
         move_point_start_of_line(fie)
     
@@ -294,7 +295,7 @@ def kill_region(fie):
     ring = cursor.ring()
     start = cursor.start()
     end = cursor.end()
-    selection = cursor.selection(start, end, remove=True)
+    selection = gate.selection(start, end, remove=True)
     ring.add(selection)
 
 def kill_line(fie):
@@ -303,7 +304,7 @@ def kill_line(fie):
     point = cursor.point()
     ring = cursor.ring()
     end_of_line = _end_of_line(fie)
-    selection = cursor.selection(point, end_of_line, remove=True)
+    selection = gate.selection(point, end_of_line, remove=True)
     ring.add(selection)
     _delete_text(gate, point, end_of_line)
 
@@ -313,7 +314,7 @@ def yank(fie):
     point = cursor.point()
     ring = cursor.ring()
     attempt = ring.get()
-    cursor.insert_region(attempt, point)
+    gate.insert_region(attempt, point)
     gate.set_active_map(fie.commander.keymaps()["Yank"])
     
 def yank_next(fie):
@@ -324,13 +325,13 @@ def yank_next(fie):
     # deletes last yank attempt
     current = ring.get()
     start_of_current = point - current.length()
-    _delete_text(gate, start_of_current, point)
+    gate.selection(start_of_current, point, remove=True)
     point = cursor.point()
     # updates ring
     ring.next_index()
     # attempts next yank
     attempt = ring.get()
-    cursor.insert_region(attempt, point)
+    gate.insert_region(attempt, point)
 
 def yank_previous(fie):
     gate = fie.gate
@@ -339,13 +340,13 @@ def yank_previous(fie):
     ring = cursor.ring()
     # deletes last yank attempt
     current = ring.get()
-    start_of_current = point - len(current)
-    _delete_text(gate, start_of_current, point)
+    start_of_current = point - current.length()
+    gate.selection(start_of_current, point, remove=True)
     point = cursor.point()
     # updates ring
     ring.previous_index()
     attempt = ring.get()
-    cursor.insert_region(attempt, point)
+    gate.insert_region(attempt, point)
 
 def yank_pop(fie):
     gate = fie.gate
@@ -365,9 +366,18 @@ def yank_cancel(fie):
     # deletes last yank attempt
     current = ring.get()
     start_of_current = point - len(current)
-    _delete_text(gate, start_of_current, point)
+    gate.selection(start_of_current, point, remove=True)
     # resets keymap
     gate.set_active_map(gate.primary_map())
+
+def basic_map(fie):
+    fie.gate.set_active_map(fie.commander.keymaps()["Basic"])
+
+def portal_map(fie): 
+    fie.gate.set_active_map(fie.commander.keymaps()["Portal"])
+
+def fonts_map(fie):
+    fie.gate.set_active_map(fie.commander.keymaps()["Fonts"])
 
 
 
