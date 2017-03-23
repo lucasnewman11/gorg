@@ -151,7 +151,6 @@ class Region():
 
     def frag_by_pos(self, pos, start=True):
         "Returns the fragment which contains pos.  By default, will return the fragment which starts at pos, and false if position is at end of the region. With start set to False, will instead return the fragment which ends at pos, and False if position is at the start of the region."
-
         num = 0
         if start:
             for i in self._fragments:
@@ -190,15 +189,15 @@ class Region():
     def index_by_frag(self, frag):
         return self._fragments.index(frag)
 
-    def add_fragment(self, fragment, index=False):
-        if not index:
+    def add_fragment(self, fragment, index="end",):
+        if index == "end":
             self._fragments.append(fragment)
         else:
             self._fragments.insert(index, fragment)
             
-    def add_fragments(self, fragments, index=False):
+    def add_fragments(self, fragments, index="end"):
         # accepts list of fragments
-        if not index:
+        if index == "end":
             self._fragments.extend(fragments)
         else:
             self._fragments[index:index] = fragments
@@ -217,20 +216,24 @@ class Region():
         target = self.frag_by_pos(pos)
         if target:
             target_start = self.pos_by_frag(target)
-            target_index = self.index_by_frag(target)
             adjusted_pos = pos - target_start
             if adjusted_pos > 0:
                 self._split_frag(target, adjusted_pos, replace)
                                     
-    def insert_region_at_pos(self, region, pos):
+    def insert_region_at_pos(self, region, pos, simplify=True):
         self._split_frag_at_pos(pos)
-        target = self.frag_by_pos(pos)
+        target = self.frag_by_pos(pos, start=True)
         if target:
             target_index = self.index_by_frag(target)
         else:
-            target_index = False
-        self.absorb(region, target_index)
+            target_index = "end"
+        self.insert_region_at_index(region, target_index, simplify)
 
+    def insert_region_at_index(self, region, index, simplify=True):
+        self.add_fragments(region.fragments(), index)
+        if simplify:
+            self.simplify()
+            
     def selection(self, start, end, remove=False):
         self._split_frag_at_pos(start)
         self._split_frag_at_pos(end)
@@ -254,15 +257,13 @@ class Region():
         if remove:
             for i in fragments:
                 self.remove_fragment(i)
+            if self._fragments:
+                self.simplify()
         # creates and returns Region
         selection_region = Region(fragments)
 
         return selection_region
         
-    def absorb(self, region, index=False):
-        self.add_fragments(region.fragments(), index)
-        self.simplify()
-
     def simplify(self):
             index = 0
             frag = self._fragments[index]
@@ -308,10 +309,11 @@ class Fragment():
         self._text_properties = properties
 
     def split(self, pos):
+        from copy import deepcopy
         text1 = self._text[:pos]
         text2 = self._text[pos:]
-        frag1 = Fragment(text1, self._text_properties)
-        frag2 = Fragment(text2, self._text_properties)
+        frag1 = Fragment(text1, deepcopy(self._text_properties))
+        frag2 = Fragment(text2, deepcopy(self._text_properties))
         return (frag1, frag2)
 
     def absorb(self, fragment):

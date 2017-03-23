@@ -5,6 +5,14 @@ from Control.Keymaps import Keymap
 import View
 import Data
 
+           
+def my_debug():
+    '''Set a tracepoint in the Python debugger that works with Qt'''
+    from PyQt4.QtCore import pyqtRemoveInputHook
+    from pdb import set_trace
+    pyqtRemoveInputHook()
+    set_trace()
+
 class FullInputEvent():
 
     def __init__(self, gie, string, commander, inter=[], gate=False):
