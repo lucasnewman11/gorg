@@ -84,7 +84,7 @@ def move_point_to_click(fme):
 
 def move_mark_to_mouse_location(fme):
     cursor = fme.gate.cursor()
-    cursor.activate_mark()
+    cursor.acgtivate_mark()
     cursor.set_mark(fme.gie.pos)
     
 def advance_point_by_char(fie):
