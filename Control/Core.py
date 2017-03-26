@@ -4,7 +4,6 @@ from PyQt4 import QtGui
 from Control.Keymaps import Keymap
 import View
 import Data
-
            
 def my_debug():
     '''Set a tracepoint in the Python debugger that works with Qt'''
@@ -12,15 +11,16 @@ def my_debug():
     from pdb import set_trace
     pyqtRemoveInputHook()
     set_trace()
+    # from Control.Core import my_debug; my_debug()
 
 class FullInputEvent():
 
-    def __init__(self, gie, string, commander, inter=[], gate=False):
+    def __init__(self, gie, string, commander):
         self.gie = gie
         self.string = string
         self.commander = commander
-        self.inter = inter
-        self.gate = gate
+        self.inter = []
+        self.gate = False
 
 class Commander():
     # the top level controller class
@@ -35,6 +35,7 @@ class Commander():
         self._windows = {}
         self._interfaces = {}
         self._window_assignments = {}
+        self._ring = KillRing()
         self._initUI()
         # connect slot
 
@@ -46,6 +47,7 @@ class Commander():
         start_interface = self._blueprints["Simple_Text"].materialize(self._keymaps)
         mini_interface = self._blueprints["Simple_Text"].materialize(self._keymaps)
         self.add_interface("start", start_interface)
+        self.add_interface("mini", mini_interface)
 
         start_window = self.frame.obj_from_path("TOP/AAAAA")
         miniwindow = self.frame.obj_from_path("TOP/MINI")
@@ -75,20 +77,28 @@ class Commander():
     def get_interface(self, window):
         return self._window_assignments[window]
 
+    def ring(self):
+        return self._ring
+
     def _gorg_key_event(self, gke):
+        # my_debug()
         fks = self._handler.process_gorg_key_event(gke)
         if gke.typ == "p":
             fie = FullInputEvent(gke, fks, self)
+            print("FROM EVENT HANDLER:", fie.inter)
             self._process_full_input_event(fie)
 
     def _gorg_mouse_event(self, gme):
         fms = self._handler.process_gorg_mouse_event(gme)
         if gme.typ in ("p", "m"):
             fie = FullInputEvent(gme, fms, self)
+            print("FROM EVENT HANDLER:", fie.inter)
             self._process_full_input_event(fie)
 
     def _process_full_input_event(self, fie):
         target_interface = self._window_assignments[fie.gie.win]
+        print("TARGET", target_interface)
+        print("PROCESS INTER", fie.inter)
         target_interface.process_full_input_event(fie)
         self._update_views()
 
@@ -168,6 +178,37 @@ class KeyEventHandler():
         elif typ == "m":
             return gclick
         return self._get_full_key_string()
+
+class KillRing():
+
+    def __init__(self):
+        self._members = []
+        self._index = 0
+
+    def add(self, new):
+        self._members.append(new)
+
+    def index(self):
+        return self._index
+
+    def get(self):
+        return self._members[self._index]
+
+    def next_index(self):
+        if self._index > 0:
+            self._index -= 1
+        else:
+            self._index = len(self._members)-1
+
+    def previous_index(self):
+        if self._index < len(self._members)-1:
+            self._index += 1
+        else:
+            self._index = 0
+
+    def remove(self, index):
+        del self._members[index]
+    
 
         
         

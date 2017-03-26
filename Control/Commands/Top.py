@@ -83,7 +83,16 @@ def _get_first_window(widget):
         return _get_first_window(new_widget)
     else:
         return widget
-                                         
+
+def delete_window(fie):
+    window = fie.gie.win
+    lattice = window.parent()
+    loc = parent.loc_from_obj(window)
+    path = window.path()
+    name = parent.name_from_obj(window)
+    frame = fie.gie.frame
+    comm = fie.commander
+    inter = comm.get_interface(window)
 
     
 

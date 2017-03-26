@@ -55,7 +55,9 @@ class Interface():
         return fragments
         
     def process_full_input_event(self, fie):
+        print("BEFORE", fie.inter)
         fie.inter.append(self)
+        print("AFTER", fie.inter)
         point = fie.gie.pos
         sub = self.sub_by_pos(point)
         sub.process_full_input_event(fie)
@@ -66,7 +68,7 @@ class Gate():
     def __init__(self):
         self._name = ""
         self._parent = False
-        self._region = Region()
+        self._region = Region([])
         self._cursor = GateCursor(self)
         self._read_only = False
         self._crop = False
@@ -145,6 +147,7 @@ class Gate():
         return selection
             
     def process_full_input_event(self, fie):
+        print(self, fie.inter)
         fie.gate = self
         self._active_keymap.match_input_event(fie)
       
@@ -232,6 +235,7 @@ class GateBlueprint():
         self._keymap_name = keymap_name
 
     def materialize(self, keymaps_dict):
+        # from Control.Core import my_debug; my_debug()
         gate = Gate()
         gate.set_name(self.name())
         # initializes fragments

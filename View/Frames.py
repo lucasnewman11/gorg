@@ -371,9 +371,6 @@ class GorgTextEdit(QtGui.QTextEdit):
         
     def _update_selected_text_properties(self, prop_dict):
         # sets color
-        print("PROP_DICT", prop_dict)
-        print(self._qtextcursor.selectedText())
-        print(self._qtextcursor.selectionStart(), self._qtextcursor.selectionEnd())
         charformat = QtGui.QTextCharFormat()
         colors = {"black": Qt.black,
                   "white": Qt.white,
@@ -390,10 +387,8 @@ class GorgTextEdit(QtGui.QTextEdit):
 
         # sets bold
         if prop_dict["bold"] == True:
-            print("yes")
             charformat.setFontWeight(75)
         else:
-            print("no")
             charformat.setFontWeight(50)
 
         # sets italic
@@ -419,7 +414,6 @@ class GorgTextEdit(QtGui.QTextEdit):
             text = i.text()
             length = i.length()
             text_properties = i.text_properties()
-            print(i, text, text_properties)
             self.insertPlainText(text)
             self._select_text(num, num+length)
             self._update_selected_text_properties(text_properties)
@@ -432,7 +426,7 @@ class GorgTextEdit(QtGui.QTextEdit):
         else:
             self._qtextcursor.setPosition(focus.cursor().point())
         self.setTextCursor(self._qtextcursor)
-        print("######################################################")
+
                 
     def keyPressEvent(self, e):
         gke = GorgKeyEvent("p", e.key(), self._qtextcursor.position())

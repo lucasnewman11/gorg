@@ -84,7 +84,7 @@ def move_point_to_click(fme):
 
 def move_mark_to_mouse_location(fme):
     cursor = fme.gate.cursor()
-    cursor.acgtivate_mark()
+    cursor.activate_mark()
     cursor.set_mark(fme.gie.pos)
     
 def advance_point_by_char(fie):
@@ -199,6 +199,7 @@ def move_point_end_of_line(fie):
     cursor.set_point(pos)
 
 def move_point_next_line(fie):
+    # from Control.Core import my_debug; my_debug()
     gte = fie.gie.win.gte()
     cursor = fie.gate.cursor()
     point = cursor.point()
@@ -310,7 +311,8 @@ def set_mark(fie):
 def kill_region(fie):
     gate = fie.gate
     cursor = gate.cursor()
-    ring = cursor.ring()
+    commander = fie.commander
+    ring = commander.ring()
     start = cursor.start()
     end = cursor.end()
     selection = gate.selection(start, end, remove=True)
@@ -319,8 +321,9 @@ def kill_region(fie):
 def kill_line(fie):
     gate = fie.gate
     cursor = gate.cursor()
+    commander = fie.commander
+    ring = commander.ring()
     point = cursor.point()
-    ring = cursor.ring()
     end_of_line = _end_of_line(fie)
     selection = gate.selection(point, end_of_line, remove=True)
     ring.add(selection)
@@ -329,8 +332,9 @@ def kill_line(fie):
 def yank(fie):
     gate = fie.gate
     cursor = gate.cursor()
+    commander = fie.commander
+    ring = commander.ring()
     point = cursor.point()
-    ring = cursor.ring()
     attempt = ring.get()
     gate.insert_region(attempt, point)
     gate.set_active_map(fie.commander.keymaps()["Yank"])
@@ -338,8 +342,9 @@ def yank(fie):
 def yank_next(fie):
     gate = fie.gate
     cursor = gate.cursor()
+    commander = fie.commander
+    ring = commander.ring()
     point = cursor.point()
-    ring = cursor.ring()
     # deletes last yank attempt
     current = ring.get()
     start_of_current = point - current.length()
@@ -354,8 +359,9 @@ def yank_next(fie):
 def yank_previous(fie):
     gate = fie.gate
     cursor = gate.cursor()
+    commander = fie.commander
+    ring = commander.ring()
     point = cursor.point()
-    ring = cursor.ring()
     # deletes last yank attempt
     current = ring.get()
     start_of_current = point - current.length()
@@ -369,7 +375,7 @@ def yank_previous(fie):
 def yank_pop(fie):
     gate = fie.gate
     gate.set_active_map(gate.primary_map())
-    ring = gate.cursor().ring()
+    ring = fie.commander.ring()
     ring.remove(ring.index())
 
 def yank_place(fie):
@@ -379,8 +385,9 @@ def yank_place(fie):
 def yank_cancel(fie):
     gate = fie.gate
     cursor = gate.cursor()
+    commander = fie.commander
+    ring = commander.ring()
     point = cursor.point()
-    ring = cursor.ring()
     # deletes last yank attempt
     current = ring.get()
     start_of_current = point - len(current)

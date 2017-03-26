@@ -7,7 +7,6 @@ class GateCursor():
         self._start = 0
         self._end = 0
         self._selection = {}
-        self._ring = KillRing()
         self._mark_active = False
         self._recent_points = []
         self._text_properties = {"color" : "black",
@@ -99,36 +98,6 @@ class GateCursor():
     def set_text_properties(self, properties):
         self._text_properties = properties
                         
-class KillRing():
-
-    def __init__(self):
-        self._members = []
-        self._index = 0
-
-    def add(self, new):
-        self._members.append(new)
-
-    def index(self):
-        return self._index
-
-    def get(self):
-        return self._members[self._index]
-
-    def next_index(self):
-        if self._index > 0:
-            self._index -= 1
-        else:
-            self._index = len(self._members)-1
-
-    def previous_index(self):
-        if self._index < len(self._members)-1:
-            self._index += 1
-        else:
-            self._index = 0
-
-    def remove(self, index):
-        del self._members[index]
-    
 class Region():
 
     def __init__(self, fragments=[]):
