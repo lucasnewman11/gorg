@@ -37,13 +37,13 @@ class Insert_Space(TextInsertionCommand):
     def execute(cls, fie, config):
         cls._insert_text(fie.gate, fie.gate.cursor().point(), " ")
 
-class Insert_New_Line(fie):
-    #Inserts a new line character into the target gate at point."
+class Insert_New_Line(TextInsertionCommand):
+    "Inserts a new line character into the target gate at point."
     @classmethod
     def execute(cls, fie, config):
         cls._insert_text(fie.gate, fie.gate.cursor().point(), "\n")
         
-class Delete_Text(WriteCommand):
+class Delete_Text(Commands.WriteCommand):
     "Deletes the selected text from the target gate.  If no text is selected, deletes the single character preceeding point."
     def execute(fie, config):
         gate = fie.gate
@@ -56,53 +56,84 @@ class Delete_Text(WriteCommand):
             point = cursor.point()
             gate.selection(point-1, point, remove=True)
 
-###### TEXT PROPERTY TOGGLING ######
-class Toggle_Bold(Commands.WriteCommand)
-def toggle_bold(fie):
-    gate = fie.gate
-    cursor = gate.cursor()
-    start = cursor.start()
-    end = cursor.end()
-    is_bold = cursor.text_property("bold")
-    if (end - start) > 0:
-        selection = gate.selection(start, end, remove=True)
-        for i in selection.fragments():
-            i.set_text_property("bold", not is_bold)
-        gate.insert_region(selection, start)
-    cursor.set_text_property("bold", not is_bold)
-    gate.set_active_map(gate.primary_map())                     
+###### TEXT DISPLAY PROPERTY MANIPULATION ######
+class Toggle_Bold(Commands.WriteCommand):
+    "Toggles the 'bold' property of the GateCursor from the target gate.  If there is a selection, toggles the 'bold' property of the selection as well."
+    def execute(fie, config):
+        gate = fie.gate
+        cursor = gate.cursor()
+        start = cursor.start()
+        end = cursor.end()
+        is_bold = cursor.text_property("bold")
+        if (end - start) > 0:
+            selection = gate.selection(start, end, remove=True)
+            for i in selection.fragments():
+                i.set_text_property("bold", not is_bold)
+            gate.insert_region(selection, start)
+        cursor.set_text_property("bold", not is_bold)
+        gate.set_active_map(gate.primary_map())
+        
+class Toggle_Italics(Commands.WriteCommand):
+    "Toggles the 'italics' property of the GateCursor from the target gate.  If there is a selection, toggles the 'italics' property of the selection as well."
+    def execute(fie, config):
+        gate = fie.gate
+        cursor = gate.cursor()
+        start = cursor.start()
+        end = cursor.end()
+        is_italics = cursor.text_property("italics")
+        if (end - start) > 0:
+            selection = gate.selection(start, end, remove=True)
+            for i in selection.fragments():
+                i.set_text_property("italics", not is_italics)
+            gate.insert_region(selection, start)
+        cursor.set_text_property("italics", not is_italics)
+        gate.set_active_map(gate.primary_map())
 
-def toggle_italics(fie):
-    gate = fie.gate
-    cursor = gate.cursor()
-    start = cursor.start()
-    end = cursor.end()
-    is_italics = cursor.text_property("italics")
-    if (end - start) > 0:
-        selection = gate.selection(start, end, remove=True)
-        for i in selection.fragments():
-            i.set_text_property("italics", not is_italics)
-        gate.insert_region(selection, start)
-    cursor.set_text_property("italics", not is_italics)
-    gate.set_active_map(gate.primary_map())                                
+class Toggle_Underline(Commands.WriteCommand):
+    "Toggles the 'underline' property of the GateCursor from the target gate.  If there is a selection, toggles the 'underline' property of the selection as well."
+    def execute(fie, config):
+        gate = fie.gate
+        cursor = gate.cursor()
+        start = cursor.start()
+        end = cursor.end()
+        is_underline = cursor.text_property("underline")
+        if (end - start) > 0:
+            selection = gate.selection(start, end, remove=True)
+            for i in selection.fragments():
+                i.set_text_property("underline", not is_underline)
+            gate.insert_region(selection, start)
+        cursor.set_text_property("underline", not is_underline)
+        gate.set_active_map(gate.primary_map())
 
-def toggle_underline(fie):
-    gate = fie.gate
-    cursor = gate.cursor()
-    start = cursor.start()
-    end = cursor.end()
-    is_underline = cursor.text_property("underline")
-    if (end - start) > 0:
-        selection = gate.selection(start, end, remove=True)
-        for i in selection.fragments():
-            i.set_text_property("underline", not is_underline)
-        gate.insert_region(selection, start)
-    cursor.set_text_property("underline", not is_underline)
-    gate.set_active_map(gate.primary_map())                                
+###### NAVIGATION COMMANDS ######
 
-def move_point_to_click(fme):
-    cursor = fme.gate.cursor()
-    cursor.set_point(fme.gie.pos)
+## string searching ##
+def search_string_forwards(pattern, string):
+    import re
+    match = re.search(pattern, string)
+    if match:
+        match_pos = match.start()
+    else:
+        match_pos = len(string)
+    return match_pos
+
+def search_string_backwards(pattern, string):
+    import re
+    matches = list(re.finditer(pattern, string))
+    if matches:
+        match_pos = matches[-1].start()
+    else:
+        match_pos = 0
+    return match_pos
+
+
+## moving point with the mouse ##
+
+class Move_Point_To_Click(Commands.NeutralCommand):
+    "Moves point of the target gate to the location of the mouse click"
+    def execute(fme, config):
+        cursor = fme.gate.cursor()
+        cursor.set_point(fme.gie.pos)
 
 def move_mark_to_mouse_location(fme):
     cursor = fme.gate.cursor()
@@ -118,24 +149,6 @@ def retreat_point_by_char(fie):
     cursor = fie.gate.cursor()
     pos = cursor.point() - 1
     cursor.set_point(pos)
-
-def _search_string_forwards(pattern, string):
-    import re
-    match = re.search(pattern, string)
-    if match:
-        match_pos = match.start()
-    else:
-        match_pos = len(string)
-    return match_pos
-
-def _search_string_backwards(pattern, string):
-    import re
-    matches = list(re.finditer(pattern, string))
-    if matches:
-        match_pos = matches[-1].start()
-    else:
-        match_pos = 0
-    return match_pos
 
 def _advance_point_to_match(gate, pattern):
     text = gate.region().text()
@@ -301,7 +314,7 @@ def move_point_previous_line(fie):
         target_line = target_block_layout.lineAt(target_layout_loc[1])
         
         cursor.set_point(target_line.textStart() + target_block.position(), False)
-        if target_line.textLength() > column:
+         if target_line.textLength() > column:
             cursor.set_point(cursor.point() + column)
         else:
             cursor.set_point(cursor.point() + target_line.textLength())

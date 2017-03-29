@@ -45,7 +45,7 @@ class Commander():
         self.frame.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
 
         start_interface = self._blueprints["Simple_Text"].materialize(self._keymaps)
-        mini_interface = self._blueprints["Simple_Text"].materialize(self._keymaps)
+        mini_interface = self._blueprints["Display_Text"].materialize(self._keymaps)
         self.add_interface("start", start_interface)
         self.add_interface("mini", mini_interface)
 
