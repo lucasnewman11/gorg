@@ -1,12 +1,17 @@
 class Command():
     # Base interface for commands.  Commands are simply class definitions - they are not instantiated.
 
-    def name():
+    @classmethod
+    def name(cls):
         # Returns a string containing the name of the command.
-        raise NotImplementedError
+        return cls.__name__
 
-    def doc():
-        # Returns a string containing the documentation of the command
+    @classmethod
+    def doc(cls):
+        # Returns a string containing the documentation of the command.
+        return cls.__doc__
+
+    def neutral():
         raise NotImplementedError
         
     def execute(fie, config):
