@@ -18,13 +18,12 @@ class Command():
         raise NotImplementedError
 
 class WriteCommand(Command):
-    # Base interface for commands that have the effect of modifying their target gate.
-
+    # Base interface for commands that modify the fragments of their target gate.
     def neutral():
-        returns False
+        return False
 
 class NeutralCommand(Command):
-    # Base interface for commands that do not modify their target gate
+    # Base interface for commands that do not modify the fragments of their target gate
 
     def neutral():
-        returns True
+        return True

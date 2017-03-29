@@ -1,9 +1,11 @@
+import config
 import Control.Commands
 import re
         
 class Keymap():
-    def __init__(self):
+    def __init__(self, config):
         self._dict = {}
+        self._config = config
 
     def add(self, key_string, dest):
         # Accepts as argument 1) a string containing an input event representation, and 2) a function object.
@@ -26,10 +28,9 @@ class Keymap():
         else:
             return False
 
-    def invoke(self, fun, e):
+    def invoke(self, command, e):
         # I need to write a line of code here which goes and calculates the args to be passed into the function
-        print(fun)
-        fun.__call__(e)
+        command.execute(e, self._config)
 
     def getdict(self):
         return self._dict
@@ -42,7 +43,7 @@ def make_keymaps_dict_from_file(fyl):
             fun = token_list[0]
             args = token_list[1:]
             if fun == "map":
-                keymaps[args[0]] = Keymap()
+                keymaps[args[0]] = Keymap(config)
             if fun == "bind":
                 keymaps[args[0]].add(re.compile(args[1]), getattr(Control.Commands, args[2]))
             if fun == "add":
