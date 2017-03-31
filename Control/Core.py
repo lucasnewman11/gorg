@@ -74,8 +74,11 @@ class Commander():
     def assign_window(self, window, interface):
         self._window_assignments[window] = interface
 
-    def get_interface(self, window):
+    def inter_by_window(self, window):
         return self._window_assignments[window]
+
+    def inter_by_name(self, name):
+        return self._interfaces[name]
 
     def ring(self):
         return self._ring
@@ -101,7 +104,7 @@ class Commander():
     def _update_views(self):
         for i in self._windows:
             window = self._windows[i]
-            window.update_view(self._window_assignments[window])
+            window.update_view(self.inter_by_window[window])
 
 class KeyEventHandler():
 

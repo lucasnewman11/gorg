@@ -1,8 +1,4 @@
 import config
-from PyQt4.QtCore import pyqtSignal
-from Control.Cursor import GateCursor, Region, Fragment
-import sys
-import json
 
 class Interface():
     # The controller class responsible for facilitating the manipulation of a specific chunk of data through a specific gate.
@@ -10,10 +6,10 @@ class Interface():
     def __init__(self):
         self._name = ""
         self._parent = False
-        self._subordinates = {}
+        self._subordinate = {}
         self._order = []
         self._focus = False
-
+        
     def name(self):
         return self._name
 
@@ -56,25 +52,32 @@ class Interface():
         return fragments
         
     def process_full_input_event(self, fie):
-
         fie.inter.append(self)
-
         point = fie.gie.pos
         sub = self.sub_by_pos(point)
         sub.process_full_input_event(fie)
         self.set_focus(sub)
 
+    def blueprint(self):
+        # returns a blueprint object of this interface with all of its contents
+
 class Gate():
 
-    def __init__(self):
-        self._name = ""
-        self._parent = False
-        self._region = Region([])
+    def __init__(self,
+                 name="",
+                 parent=False,
+                 region=Region([]),
+                 read_only=False,
+                 crop=False,
+                 keymap=False):
+        self._name = name
+        self._parent = parent
+        self._region = region
         self._cursor = GateCursor(self)
-        self._read_only = False
-        self._crop = False
-        self._active_keymap = False
-        self._primary_keymap = False
+        self._read_only = read_only
+        self._crop = crop
+        self._primary_keymap = keymap
+        self._active_keymap = self._primary_keymap
 
     def name(self):
         return self._name
@@ -156,159 +159,307 @@ class Gate():
         else:
             command.execute(fie, config)
 
-class InterfaceBlueprint():
+    def blueprint(self):
+        # returns a blueprint version of this gate
 
-    def __init__(self):
-        self._name = ""
-        self._focus = ""
-        self._order = []
-        self._subordinates = {}
-    
-    def name(self):
-        return self._name
-    
-    def set_name(self, name):
-        self._name = name
+class GateCursor():
 
-    def order(self):
-        return self._order
+    def __init__(self, gate):
+        self._gate = gate
+        self._point = 0
+        self._mark = 0
+        self._start = 0
+        self._end = 0
+        self._selection = {}
+        self._mark_active = False
+        self._recent_points = []
+        self._text_properties = {"color" : "black",
+                            "bold" : False,
+                            "italics": False,
+                            "underline": False}
 
-    def set_order(self, order):
-        self._order = order
+    def point(self):
+        return self._point
 
-    def focus_name(self):
-        return self._focus_name
+    def mark(self):
+        return self._mark
 
-    def set_focus_name(self, focus_name):
-        self._focus_name = focus_name
+    def start(self):
+        return self._start
 
-    def add(self, name, sub):
-        self._subordinates[name] = sub
-        self._order.append(name)
+    def end(self):
+        return self._end
+
+    def ring(self):
+        return self._ring
+
+    def _update_selection_points(self):
+        self._start = min(self._point, self._mark)
+        self._end = max(self._point, self._mark)
+
+    def _update_text_properties(self):
+        from copy import deepcopy
+        fragment = self._gate.region().frag_by_pos(self._point, start=False)
+        if fragment:
+            self.set_text_properties(deepcopy(fragment.text_properties()))
+
+    def set_point(self, pos, record=True, mark_also=True):
+        length = self._gate.length()
+        if pos < 0:
+            self._point = 0
+        elif pos > length:
+            self._point = length
+        else:
+            self._point = pos
+        if record == True:
+            self._record_point()
+        if mark_also == True:
+            if not self.is_mark_active():
+                self.set_mark(pos)
+        self._update_text_properties()
+        self._update_selection_points()
+
+    def _record_point(self):
+        self._recent_points.append(self._point)
+        if len(self._recent_points) > 10:
+            self._recent_points.pop(0)
         
-    def sub_by_name(self, name):
-        return self._subordinates[name]
+    def last_point(self, n=2):
+        index = n*-1
+        try:
+            return self._recent_points[index]
+        except IndexError:
+            return False
 
-    def materialize(self, keymaps_dict):
-        interface = Interface()
-        interface.set_name(self.name())
-        for i in self.order():
-            blueprint = self.sub_by_name(i)
-            subordinate = blueprint.materialize(keymaps_dict)
-            interface.add(subordinate.name(), subordinate)
-        interface.set_focus(interface.sub_by_name(self.focus_name()))
-        return interface
+    def set_mark(self, pos):
+        length = self._gate.length()
+        if pos < 0:
+            self._mark = 0
+        elif pos > length:
+            self._mark = length
+        else:
+            self._mark = pos
+        self._update_selection_points()
 
-class GateBlueprint():
+    def is_mark_active(self):
+        return self._mark_active
 
-    def __init__(self):
-        self._name = False
-        self._fragment_dicts = []
-        self._read_only = False
-        self._crop = False
-        self._keymap_name = False
+    def activate_mark(self):
+        self._mark_active = True
 
-    def name(self):
-        return self._name
+    def deactivate_mark(self):
+        self._mark_active = False
 
-    def set_name(self, name):
-        self._name = name
+    def text_property(self, name):
+        return self._text_properties[name]
 
-    def fragment_dicts(self):
-        return self._fragment_dicts
+    def set_text_property(self, name, value):
+        self._text_properties[name] = value
 
-    def add_fragment_dict(self, fragment_dict):
-        self._fragment_dicts.append(fragment_dict)
-    
-    def read_only(self):
-        return self._read_only
+    def text_properties(self):
+        return self._text_properties
 
-    def set_read_only(self, read_only):
-        self._read_only = read_only
+    def set_text_properties(self, properties):
+        self._text_properties = properties
+                        
+class Region():
 
-    def crop(self):
-        return self._crop
+    def __init__(self, fragments=[]):
+        self._fragments = fragments
 
-    def set_crop(self, crop):
-        self._crop = crop
+    def fragments(self):
+        return self._fragments
 
-    def keymap_name(self):
-        return self._keymap_name
+    def length(self):
+        num = 0
+        for i in self._fragments:
+            num += i.length()
+        return num
 
-    def set_keymap_name(self, keymap_name):
-        self._keymap_name = keymap_name
+    def text(self):
+        text = ""
+        for i in self._fragments:
+            text += i.text()
+        return text
 
-    def materialize(self, keymaps_dict):
-        # from Control.Core import my_debug; my_debug()
-        gate = Gate()
-        gate.set_name(self.name())
-        # initializes fragments
-        for i in self.fragment_dicts():
-            text = i["text"]
-            properties = {k:v for k, v in i.items() if k != "text"}
-            fragment = Fragment(text, properties)
-            gate.region().add_fragment(fragment)
-        # initializes gate properties
-        gate.set_read_only(self.read_only())
-        gate.set_crop(self.crop())
-        # initializes gate keymaps
-        keymap = keymaps_dict[self.keymap_name()]
-        gate.set_active_map(keymap)
-        gate.set_primary_map(keymap)
-        return gate
+    def frag_by_pos(self, pos, start=True):
+        "Returns the fragment which contains pos.  By default, will return the fragment which starts at pos, and false if position is at end of the region. With start set to False, will instead return the fragment which ends at pos, and False if position is at the start of the region."
+        num = 0
+        if start:
+            for i in self._fragments:
+                length = i.length()
+                num += length
+                if num > pos:
+                    return i
+            if pos == self.length():
+                return False
+            else:
+                print("Position is outside of region.")
+                raise ValueError
+        else:
+            for i in self._fragments:
+                length = i.length()
+                num += length
+                if num >= pos:
+                    return i
+            if pos == 0:
+                return False
+            else:
+                print("Position is outside of region.")
+                raise ValueError
         
-def make_interface_blueprints_dict_from_file(fyl, gate_blueprints_dict):
-    json_dict = json.load(fyl)
-    interface_blueprints_dict = {}
-    for i in json_dict:
-        new_blue = InterfaceBlueprint()
-        new_blue.set_name(i)
-        properties = json_dict[i]
-        order = properties["order"]
-        for j in order:
-            sub_name = j[0]
-            sub_type = j[1]
-            if sub_type == "interface":
-                try:
-                    sub = interface_blueprints_dict[sub_name]
-                except ValueError:
-                    print("The InterfaceBlueprint for", sub_name, "does not exist.  Check to see if it referenced in your json config file before it has been constructed.")
-                    raise ValueError
-            elif sub_type == "gate":
-                try:
-                    sub = gate_blueprints_dict[sub_name]
-                except ValueError:
-                    print("The GateBlueprint for", sub_name, "does not exist.")
-                    raise ValueError
-            new_blue.add(sub_name, sub)
-        focus_name = properties["focus"]
-        new_blue.set_focus_name(focus_name)
-        interface_blueprints_dict[i] = new_blue
-    return interface_blueprints_dict
+    def pos_by_frag(self, frag):
+        num = 0
+        for i in self._fragments:
+            if i == frag:
+                return num
+            else:
+                num += i.length()
+
+    def frag_by_index(self, index):
+        return self._fragments[index]
+
+    def index_by_frag(self, frag):
+        return self._fragments.index(frag)
+
+    def add_fragment(self, fragment, index="end",):
+        if index == "end":
+            self._fragments.append(fragment)
+        else:
+            self._fragments.insert(index, fragment)
+            
+    def add_fragments(self, fragments, index="end"):
+        # accepts list of fragments
+        if index == "end":
+            self._fragments.extend(fragments)
+        else:
+            self._fragments[index:index] = fragments
         
-def make_gate_blueprints_dict_from_file(fyl):
-    json_dict = json.load(fyl)
-    gate_blueprints_dict = {}
-    for i in json_dict:
-        new_blue = GateBlueprint()
-        new_blue.set_name(i)
-        properties = json_dict[i]
-        # fragments
-        fragments = properties["fragments"]
-        for j in fragments:
-            new_blue.add_fragment_dict(j)
-        # read only
-        read_only = properties["read_only"]
-        new_blue.set_read_only(read_only)
-        # crop
-        crop = properties["crop"]
-        new_blue.set_crop(crop)
-        # keymap
-        keymap_name = properties["keymap"]
-        new_blue.set_keymap_name(keymap_name)
-        # appends to main dict
-        gate_blueprints_dict[i] = new_blue
-    return gate_blueprints_dict
+    def remove_fragment(self, fragment):
+        self._fragments.remove(fragment)
+
+    def _split_frag(self, fragment, adjusted_pos, replace=True):
+        new_fragments = fragment.split(adjusted_pos)
+        if new_fragments and replace:
+            frag_index = self.index_by_frag(fragment)
+            self.remove_fragment(fragment)
+            self.add_fragments(new_fragments, frag_index)
+        
+    def _split_frag_at_pos(self, pos, replace=True):
+        target = self.frag_by_pos(pos)
+        if target:
+            target_start = self.pos_by_frag(target)
+            adjusted_pos = pos - target_start
+            if adjusted_pos > 0:
+                self._split_frag(target, adjusted_pos, replace)
+                                    
+    def insert_region_at_pos(self, region, pos, simplify=True):
+        self._split_frag_at_pos(pos)
+        target = self.frag_by_pos(pos, start=True)
+        if target:
+            target_index = self.index_by_frag(target)
+        else:
+            target_index = "end"
+        self.insert_region_at_index(region, target_index, simplify)
+
+    def insert_region_at_index(self, region, index, simplify=True):
+        self.add_fragments(region.fragments(), index)
+        if simplify:
+            self.simplify()
+            
+    def selection(self, start, end, remove=False):
+        self._split_frag_at_pos(start)
+        self._split_frag_at_pos(end)
+        start_target = self.frag_by_pos(start)
+        end_target = self.frag_by_pos(end)
+        # assigns start index
+        if start_target:
+            start_index = self.index_by_frag(start_target)
+        # assigns end index
+        if end_target:
+            end_index = self.index_by_frag(end_target)
+        # creates sublist of fragments
+        if start_target and end_target:
+            fragments = self._fragments[start_index:end_index]
+        elif start_target and not end_target:
+            fragments = self._fragments[start_index:]
+        else:
+            fragments = []
+        # removes fragments if necessary
+        if remove:
+            for i in fragments:
+                self.remove_fragment(i)
+            if self._fragments:
+                self.simplify()
+        # creates and returns Region
+        selection_region = Region(fragments)
+
+        return selection_region
+        
+    def simplify(self):
+            index = 0
+            frag = self._fragments[index]
+            length = len(self._fragments)
+            while index < length-1 and length >= 2:
+                target = self.frag_by_index(index+1)
+                if frag.text_properties() == target.text_properties():
+                    frag.absorb(target)
+                    self.remove_fragment(target)
+                else:
+                    index += 1
+                    frag = self._fragments[index]
+                length = len(self._fragments)
+
+    def blueprint(self):
+        # returns a blueprint version of this region
+        
+class Fragment():
+
+    def __init__(self, text="", text_properties={"color" : "black",
+                                            "bold" : False,
+                                            "italics": False,
+                                            "underline": False}):
+        self._text = text
+        self._text_properties = text_properties
+
+    def text(self):
+        return self._text
+
+    def set_text(self, text):
+        self._text = text
+
+    def length(self):
+        return len(self._text)
+
+    def text_property(self, name):
+        return self._text_properties[name]
+
+    def set_text_property(self, name, value):
+        self._text_properties[name] = value
+
+    def text_properties(self):
+        return self._text_properties
+
+    def set_text_properties(self, properties):
+        self._text_properties = properties
+
+    def split(self, pos):
+        from copy import deepcopy
+        text1 = self._text[:pos]
+        text2 = self._text[pos:]
+        frag1 = Fragment(text1, deepcopy(self._text_properties))
+        frag2 = Fragment(text2, deepcopy(self._text_properties))
+        return (frag1, frag2)
+
+    def absorb(self, fragment):
+        if fragment.text_properties() != self._text_properties:
+            print("Fragments can only absorb other fragments with identical text_properties.")
+            raise ValueError
+        self._text += fragment.text()
+
+        
+
+
         
         
             
