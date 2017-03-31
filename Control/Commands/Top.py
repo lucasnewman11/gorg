@@ -1,7 +1,7 @@
 import View.Frames
-import Control.Commands.Commands as Commands
+from Control.Commands.Basic import NeutralCommand, WriteCommand
 
-class SplitWindowCommand(Commands.NeutralCommand):
+class SplitWindowCommand(NeutralCommand):
     "Base class of commands that split the window with focus."
 
     def _split_window(fie, ori):
@@ -34,17 +34,18 @@ class SplitWindowCommand(Commands.NeutralCommand):
 
 class Split_Window_Horizontal(SplitWindowCommand):
     "Splits the window with focus horizontally, assigning to the new window the same interface."
+
     @classmethod
     def execute(cls, fie, config):
         cls._split_window.__call__(fie, "h")
 
 class Split_Window_Vertical(SplitWindowCommand):
-        "Splits the window with focus veritcally, assigning to the new window the same interface."
+    "Splits the window with focus veritcally, assigning to the new window the same interface."
     @classmethod
     def execute (cls, fie, config):
         cls._split_window.__call__(fie, "v")
 
-class Change_Window_Focus(Commands.NeutralCommand):
+class Change_Window_Focus(NeutralCommand):
     "Changes which window has focus according to a set rotation."
 
     @classmethod
@@ -57,28 +58,25 @@ class Change_Window_Focus(Commands.NeutralCommand):
         if next_widget:
             return cls._get_first_window(next_widget)
         else:
+            print(parent.path())
             return cls._get_next_window(parent)
 
     def _get_next_widget(widget, parent):
         loc = parent.loc_from_obj(widget)
-        hor_next_loc = (loc[0], loc[1] + 1)
+        hor_next_loc = (loc[0], loc[1]+1)
         try:
             new_win = parent.obj_from_loc(hor_next_loc)
         except KeyError:
             new_win = False
-
         if new_win:
             return new_win
         else:
-            ver_next_loc = (loc[0] + 1, 1)
+            ver_next_loc = (loc[0]+1, 1)
             try:
                 new_win = parent.obj_from_loc(ver_next_loc)
             except KeyError:
                 new_win = False
-                if new_win:
-                    return new_win
-                else:
-                    return False
+            return new_win
 
     @classmethod
     def _get_first_window(cls, widget):

@@ -5,11 +5,10 @@
 (bind Top Ctrl-4 Change_Window_Focus)
 (bind Basic_Text (Shft-)?[!-~] Insert_Character)
 (bind Basic_Text Spc Insert_Space)
-(bind Basic_Text Bkspc Delete)
+(bind Basic_Text Bkspc Delete_Text)
 (bind Basic_Text Ret Insert_New_Line)
-(bind Basic_Text Meta-X Invoke_Command)
-(bind Basic_Text Mouse_P Move_Point_To_Click)
-(bind Basic_Text Mouse_M Move_Mark_To_Mouse_Location)
+(bind Basic_Text MOUSE_P Move_Point_To_Click)
+(bind Basic_Text MOUSE_M Move_Mark_To_Mouse_Location)
 (bind Basic_Text Ctrl-F Advance_Point_By_Char)
 (bind Basic_Text Ctrl-B Retreat_Point_By_Char)
 (bind Basic_Text Meta-F Advance_Point_By_Word)
@@ -22,9 +21,7 @@
 (bind Basic_Text Meta-A Retreat_Point_By_Sentence)
 (bind Basic_Text Ctrl-Spc Set_Mark)
 (bind Basic_Text Ctrl-W Kill_Region)
-(bind Basic_Text Ctrl-K Kill_Line)
 (bind Basic_Text Ctrl-Y Yank)
-(bind Basic_Text Ctrl-Ret Print_Shit)
 
 (map Basic)
 (add Basic Top)
@@ -39,7 +36,7 @@
 (bind Yank Q Yank_Cancel)
 
 (map Portal)
-(binD Portal F Fonts_Map)
+(bind Portal F Fonts_Map)
 
 (map Fonts)
 (bind Fonts B Toggle_Bold)

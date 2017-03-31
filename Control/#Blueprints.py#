@@ -1,169 +1,11 @@
-import config
-from PyQt4.QtCore import pyqtSignal
-from Control.Cursor import GateCursor, Region, Fragment
-import sys
-import json
-
-class Interface():
-    # The controller class responsible for facilitating the manipulation of a specific chunk of data through a specific gate.
-
-    def __init__(self):
-        self._name = ""
-        self._parent = False
-        self._subordinates = {}
-        self._order = []
-        self._focus = False
-
-    def name(self):
-        return self._name
-
-    def set_name(self, name):
-        self._name = name
-
-    def parent(self):
-        return self._parent
-
-    def set_parent(self, parent):
-        self._parent = parent
-        
-    def add(self, name, sub):
-        self._subordinates[name] = sub
-        self._order.append(name)
-        sub.set_parent(self)
-
-    def sub_by_name(self, name):
-        return self._subordinates[name]
-
-    def sub_by_pos(self, pos):
-        num = 0
-        for i in self._order:
-            sub = self._subordinates[i]
-            length = sub.length()
-            num += length
-            if num >= pos:
-                return sub
-
-    def focus(self):
-        return self._focus
-
-    def set_focus(self, sub):
-        self._focus = sub
-
-    def fragments(self):
-        fragments = []
-        for i in self._order:
-            fragments.extend(self._subordinates[i].fragments())
-        return fragments
-        
-    def process_full_input_event(self, fie):
-
-        fie.inter.append(self)
-
-        point = fie.gie.pos
-        sub = self.sub_by_pos(point)
-        sub.process_full_input_event(fie)
-        self.set_focus(sub)
-
-class Gate():
-
-    def __init__(self):
-        self._name = ""
-        self._parent = False
-        self._region = Region([])
-        self._cursor = GateCursor(self)
-        self._read_only = False
-        self._crop = False
-        self._active_keymap = False
-        self._primary_keymap = False
-
-    def name(self):
-        return self._name
-
-    def set_name(self, name):
-        self._name = name
-
-    def parent(self):
-        return self._parent
-
-    def set_parent(self, parent):
-        self._parent = parent
-
-    def region(self):
-        return self._region
-
-    def set_region(self, region):
-        self._region = region
-
-    def cursor(self):
-        return self._cursor
-    
-    def read_only(self):
-        return self._read_only
-
-    def set_read_only(self, ro):
-        self._read_only = ro
-
-    def crop(self):
-        return self._crop
-
-    def set_crop(self, crop):
-        self._crop = crop
-
-    def active_map(self):
-        return self._active_keymap
-
-    def set_active_map(self, keymap):
-        self._active_keymap = keymap
-
-    def primary_map(self):
-        return self._primary_keymap
-                                
-    def set_primary_map(self, keymap):
-        self._primary_keymap = keymap
-
-    def length(self):
-        return self._region.length()
-
-    def fragments(self):
-        return self._region.fragments()
-
-    def insert_region(self, region, pos):
-        length = region.length()
-        point = self._cursor.point()
-        self._region.insert_region_at_pos(region, pos)
-        if point >= pos:
-            self._cursor.set_point(point + length)
-
-    def selection(self, start, end, remove=False, deactivate=True):
-        selection = self._region.selection(start, end, remove)
-        length = selection.length()
-        point = self._cursor.point()
-        if remove:
-            if deactivate:
-                self._cursor.deactivate_mark()
-            if point > end:
-                self._cursor.set_point(point-length)
-            elif point >= start:
-                self._cursor.set_point(start)
-                
-        return selection
-            
-    def process_full_input_event(self, fie):
-        fie.gate = self
-        command = self._active_keymap.match_input_event(fie)
-        if self.read_only() and not command.neutral():
-            print("Target gate is read only.")
-        else:
-            command.execute(fie, config)
-
 class InterfaceBlueprint():
 
     def __init__(self):
         self._name = ""
-        self._focus = ""
         self._order = []
         self._subordinates = {}
-    
+        self._focus_name = ""
+        
     def name(self):
         return self._name
     
@@ -256,7 +98,21 @@ class GateBlueprint():
         gate.set_active_map(keymap)
         gate.set_primary_map(keymap)
         return gate
-        
+
+class RegionBlueprint():
+
+    def __init__(self):
+        self._markup = ""
+
+    def markup(self):
+        return self._markup
+
+    def set_markup(self, markup):
+        self._markup = markup
+
+    def materialize(self):
+        # I need to specify the markup, and then write the parser
+                           
 def make_interface_blueprints_dict_from_file(fyl, gate_blueprints_dict):
     json_dict = json.load(fyl)
     interface_blueprints_dict = {}
@@ -309,25 +165,9 @@ def make_gate_blueprints_dict_from_file(fyl):
         # appends to main dict
         gate_blueprints_dict[i] = new_blue
     return gate_blueprints_dict
-        
-        
-            
+
 
     
-            
-
-        
-
-
-
-
-
-
-
-
-
-
-
 
 
 

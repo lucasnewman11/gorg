@@ -24,6 +24,11 @@ class Command():
     def execute(fie, config):
         raise NotImplementedError
 
+    def _message(fie, message):
+        gate = Gate()
+        inter = Interface
+        
+
 class WriteCommand(Command):
     # Base interface for commands that modify the fragments of their target gate.
     def neutral():

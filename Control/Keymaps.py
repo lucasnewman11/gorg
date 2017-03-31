@@ -22,15 +22,7 @@ class Keymap():
             return False
 
     def match_input_event(self, e):
-        match = self.match(e.string)
-        if match:
-            self.invoke(match, e)
-        else:
-            return False
-
-    def invoke(self, command, e):
-        # I need to write a line of code here which goes and calculates the args to be passed into the function
-        command.execute(e, self._config)
+        return self.match(e.string)
 
     def getdict(self):
         return self._dict
