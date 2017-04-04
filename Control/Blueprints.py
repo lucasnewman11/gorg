@@ -41,14 +41,17 @@ class InterfaceBlueprint():
         interface.set_focus(interface.sub_by_name(self.focus_name()))
         return interface
 
+    def data(self):
+        # returns persistible Python data structure
+
 class GateBlueprint():
 
     def __init__(self):
         self._name = False
-        self._fragment_dicts = []
+        self._region_blueprint = False
         self._read_only = False
         self._crop = False
-        self._keymap_name = False
+        self._keymap_blueprint = False
 
     def name(self):
         return self._name
@@ -56,11 +59,11 @@ class GateBlueprint():
     def set_name(self, name):
         self._name = name
 
-    def fragment_dicts(self):
-        return self._fragment_dicts
+    def region_blueprint(self):
+        return self._region_blueprint
 
-    def add_fragment_dict(self, fragment_dict):
-        self._fragment_dicts.append(fragment_dict)
+    def set_region_blueprint(self, blue):
+        self._region_blueprint = blue
     
     def read_only(self):
         return self._read_only
@@ -74,11 +77,11 @@ class GateBlueprint():
     def set_crop(self, crop):
         self._crop = crop
 
-    def keymap_name(self):
-        return self._keymap_name
+    def keymap_blueprint(self):
+        return self._keymap_blueprint
 
-    def set_keymap_name(self, keymap_name):
-        self._keymap_name = keymap_name
+    def set_keymap_blueprint(self, blueprint):
+        self._keymap_blueprint = blueprint
 
     def materialize(self, keymaps_dict):
         # from Control.Core import my_debug; my_debug()
@@ -99,6 +102,9 @@ class GateBlueprint():
         gate.set_primary_map(keymap)
         return gate
 
+    def data(self):
+        # returns persistible Python data structure
+
 class RegionBlueprint():
 
     def __init__(self):
@@ -112,6 +118,13 @@ class RegionBlueprint():
 
     def materialize(self):
         # I need to specify the markup, and then write the parser
+
+    def data(self):
+        # returns persistible Python data structure
+
+class KeymapBlueprint():
+
+    
                            
 def make_interface_blueprints_dict_from_file(fyl, gate_blueprints_dict):
     json_dict = json.load(fyl)

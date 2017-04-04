@@ -27,6 +27,9 @@ class Keymap():
     def getdict(self):
         return self._dict
 
+    def blueprint(self):
+        # returns a blueprint of the keymap
+
 def make_keymaps_dict_from_file(fyl):
     keymaps = {}
     for line in fyl:

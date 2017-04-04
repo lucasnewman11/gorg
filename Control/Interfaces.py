@@ -1,4 +1,5 @@
 import config
+from Control.Blueprints import InterfaceBlueprint, GateBlueprint, RegionBlueprint
 
 class Interface():
     # The controller class responsible for facilitating the manipulation of a specific chunk of data through a specific gate.
@@ -15,6 +16,12 @@ class Interface():
 
     def set_name(self, name):
         self._name = name
+
+    def order(self):
+        return self._order
+
+    def set_order(self, order):
+        self._order = order
 
     def parent(self):
         return self._parent
@@ -60,6 +67,12 @@ class Interface():
 
     def blueprint(self):
         # returns a blueprint object of this interface with all of its contents
+        blueprint = InterfaceBlueprint()
+        blueprint.set_name(self.name())
+        blueprint.set_focus_name(self.focus().name())
+        for i in self.order():
+            blueprint.add(i.name(), i.blueprint())
+        return blueprint
 
 class Gate():
 
@@ -161,7 +174,14 @@ class Gate():
 
     def blueprint(self):
         # returns a blueprint version of this gate
-
+        blueprint = GateBlueprint()
+        blueprint.set_name(self.name())
+        blueprint.set_region_blueprint(self.region().blueprint())
+        blueprint.set_read_only(self.read_only())
+        blueprint.set_crop(self.crop())
+        blueprint.set_keymap_blueprint(self.keymap().blueprint())
+        return blueprint
+        
 class GateCursor():
 
     def __init__(self, gate):
