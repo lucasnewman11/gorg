@@ -1,5 +1,0 @@
-(map Main)
-(map Other)
-(bindcom Main C-H hello)
-(bindmap Main C-J Other)
-(bindcom Other H hi)

@@ -1,9 +1,3 @@
-import sys, types
-from PyQt4.QtCore import Qt, QObject, pyqtSignal
-from PyQt4 import QtGui
-from Control.Keymaps import Keymap
-import View
-import Data
            
 def my_debug():
     '''Set a tracepoint in the Python debugger that works with Qt'''
@@ -25,12 +19,11 @@ class FullInputEvent():
 class Commander():
     # the top level controller class
 
-    def __init__(self, keymaps_dict, interface_blueprints_dict):
+    def __init__(self, blueprints):
         super(Commander, self).__init__()
 
         # initialize basics
-        self._keymaps = keymaps_dict
-        self._blueprints = interface_blueprints_dict
+        self._blueprints = blueprints
         self._handler = KeyEventHandler()
         self._windows = {}
         self._interfaces = {}
@@ -44,8 +37,9 @@ class Commander():
         self.frame.gorg_key_event_signal.connect(self._gorg_key_event)
         self.frame.gorg_mouse_event_signal.connect(self._gorg_mouse_event)
 
-        start_interface = self._blueprints["Simple_Text"].materialize(self._keymaps)
-        mini_interface = self._blueprints["Display_Text"].materialize(self._keymaps)
+        start_interface = self._blueprints["Interfaces"]["Simple"].materialize()
+        mini_interface = self._blueprints["Interfaces"]["Simple"].materialize()
+
         self.add_interface("start", start_interface)
         self.add_interface("mini", mini_interface)
 
@@ -58,9 +52,6 @@ class Commander():
         self.assign_window(miniwindow, mini_interface)
 
         self.frame.show()
-
-    def keymaps(self):
-        return self._keymaps
 
     def blueprints(self):
         return self._blueprints
@@ -104,7 +95,7 @@ class Commander():
     def _update_views(self):
         for i in self._windows:
             window = self._windows[i]
-            window.update_view(self.inter_by_window[window])
+            window.update_view(self.inter_by_window(window))
 
 class KeyEventHandler():
 
@@ -191,15 +182,19 @@ class KillRing():
         return self._index
 
     def get(self):
-        return self._members[self._index]
+        print("FROM RING", self._members, self._index)
+        if self._members:
+            return self._members[self._index]
+        else:
+            return False
 
-    def next_index(self):
+    def previous_index(self):
         if self._index > 0:
             self._index -= 1
         else:
             self._index = len(self._members)-1
 
-    def previous_index(self):
+    def next_index(self):
         if self._index < len(self._members)-1:
             self._index += 1
         else:
@@ -207,7 +202,15 @@ class KillRing():
 
     def remove(self, index):
         del self._members[index]
+        if self._index >= index:
+            self.previous_index()
     
+import sys, types
+from PyQt4.QtCore import Qt, QObject, pyqtSignal
+from PyQt4 import QtGui
+import View
+import Data
+import Control.Blueprints
 
         
         

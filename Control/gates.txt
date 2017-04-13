@@ -1,2 +1,0 @@
-{"simple_body": {"keymap": "Basic", "read_only": false, "crop": false, "fragments":  [{"underline": false, "color": "black", "bold": false, "italics": false, "text": ""}]},
-"display_body": {"keymap": "Basic", "read_only": true, "crop": false, "fragments":  [{"underline": false, "color": "black", "bold": false, "italics": false, "text": ""}]}}

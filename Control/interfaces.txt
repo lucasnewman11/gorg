@@ -1,2 +1,0 @@
-{"Simple_Text": {"order" : [["simple_body", "gate"]], "focus": "simple_body"},
-"Display_Text": {"order" : [["display_body", "gate"]], "focus": "display_body"}}

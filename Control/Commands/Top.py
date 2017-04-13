@@ -13,7 +13,7 @@ class SplitWindowCommand(NeutralCommand):
         name = parent.name_from_obj(window)
         frame = fie.gie.frame
         comm = fie.commander
-        inter = comm.get_interface(window)
+        inter = comm.inter_by_window(window)
     
         parent.remove_obj(window)
 

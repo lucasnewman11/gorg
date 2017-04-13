@@ -55,6 +55,7 @@ class Frag_Delta_List():
 
     def region(self):
         # returns a region of fragments, created from the frag_delta list
+        import pdb; pdb.set_trace()
         region = Region()
         last_frag = False
         for i in self._frag_deltas:

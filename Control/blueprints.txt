@@ -1,1 +1,80 @@
-{"Simple_Text": {"order": ["body"], "body": {"keymap": "Basic", "underline": "False", "read-only": "False", "color": "black", "bold": "False", "italics": "False", "text": ""}}}
+Keymaps:
+  Windows: 
+    name: Windows
+    bindings: &Windows_Bindings
+      'Ctrl-2': Split_Window_Horizontal
+      'Ctrl-3': Split_Window_Vertical
+      'Ctrl-4': Change_Window_Focus
+  Text: 
+    name: Text
+    bindings: &Text_Bindings
+      '(Shft-)?[!-~]': Insert_Character
+      'Spc': Insert_Space
+      'Ret': Insert_New_Line
+      'Bkspc': Delete_Text
+  Navigation: 
+    name: Navigation
+    bindings: &Navigation_Bindings
+      'MOUSE_P': Move_Point_To_Click
+      'MOUSE_M': Move_Mark_To_Mouse_Location
+      'Ctrl-F': Advance_Point_By_Char
+      'Ctrl-B': Retreat_Point_By_Char
+      'Meta-F': Advance_Point_By_Word
+      'Meta-B': Retreat_Point_By_Word
+      'Ctrl-A': Move_Point_Start_Of_Line
+      'Ctrl-E': Move_Point_End_Of_Line
+      'Ctrl-N': Move_Point_Next_Line
+      'Ctrl-P': Move_Point_Previous_Line
+      'Meta-E': Advance_Point_By_Sentence
+      'Meta-A': Retreat_Point_By_Sentence
+  Yank:
+    name: Yank
+    bindings:
+      'N': Yank_Next
+      'P': Yank_Previous
+      'Ret': Yank_Pop
+      'Ctrl-Ret': Yank_Place
+      'Q': Yank_Cancel
+  Portal:
+    name: Portal
+    bindings:
+      'F': Fonts_Map
+  Fonts:
+    name: Fonts
+    bindings:
+      'B': Toggle_Bold
+      'I': Toggle_Italics
+      'U': Toggle_Underline
+  Basic: &Basic
+    name: Basic
+    bindings:
+      <<: *Windows_Bindings
+      <<: *Text_Bindings
+      <<: *Navigation_Bindings
+      'Ctrl-Spc': Set_Mark
+      'Ctrl-W': Kill_Region
+      'Ctrl-Y': Yank
+      'Ctrl-C': Portal_Map
+Gates:
+  SimpleBody: &SimpleBody
+    name: SimpleBody
+    keymap:
+      <<: *Basic
+    region: ''
+    read_only: False
+    crop: False
+  DisplayBody: &DisplayBody
+    <<: *SimpleBody
+    name: DisplayBody
+    read_only: True
+Interfaces:
+  Simple:
+    name: Simple
+    order:
+      - <<: *SimpleBody
+    focus_name: SimpleBody
+  Display:
+    name: Display
+    order:
+      - <<: *DisplayBody
+    focus_name: DisplayBody

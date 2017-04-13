@@ -1,8 +1,3 @@
-import Control
-from Control.Cursor import Fragment, Region
-import Control.Interfaces
-from copy import deepcopy
-
 ###### BASE CLASSES ######
 
 class Command():
@@ -45,7 +40,7 @@ class NeutralCommand(Command):
 class Basic_Map(NeutralCommand):
     "Sets the active keymap of the calling gate to 'Basic'"
     def execute(fie, config):
-        fie.gate.set_active_map(fie.commander.keymaps()["Basic"])
+        fie.gate.set_active_map(fie.commander.blueprints()["Keymaps"]["Basic"].materialize())
 
 ###### BASIC TEXT MANIPULATION ######
 
@@ -99,12 +94,12 @@ class Delete_Text(WriteCommand):
 class Portal_Map(NeutralCommand):
     "Sets the active keymap of the calling gate to 'Portal.'"
     def execute(fie, config):
-        fie.gate.set_active_map(fie.commander.keymaps()["Portal"])
+        fie.gate.set_active_map(fie.commander.blueprints()["Keymaps"]["Portal"].materialize())
 
 class Fonts_Map(NeutralCommand):
     "Sets the active keymap of the calling gate to 'Fonts.'"
     def execute(fie, config):
-        fie.gate.set_active_map(fie.commander.keymaps()["Fonts"])
+        fie.gate.set_active_map(fie.commander.blueprints()["Keymaps"]["Fonts"].materialize())
 
 class Toggle_Bold(WriteCommand):
     "Toggles the 'bold' property of the GateCursor from the target gate.  If there is a selection, toggles the 'bold' property of the selection as well."
@@ -188,14 +183,14 @@ class Move_Mark_To_Mouse_Location(NeutralCommand):
         cursor = fie.gate.cursor()
         cursor.activate_mark()
         cursor.set_mark(fie.gie.pos)
-    
+
 class Advance_Point_By_Char(NeutralCommand):
     "Moves point forwards by one character."
     def execute(fie, config):
         cursor = fie.gate.cursor()
         pos = cursor.point() + 1
         cursor.set_point(pos)
-            
+
 class Retreat_Point_By_Char(NeutralCommand):
     "Moves point backwards by one character."
     def execute(fie, config):
@@ -465,8 +460,9 @@ class Yank(WriteCommand):
         ring = commander.ring()
         point = cursor.point()
         attempt = ring.get()
-        gate.insert_region(attempt, point)
-        gate.set_active_map(fie.commander.keymaps()["Yank"])
+        if attempt:
+            gate.insert_region(attempt, point)
+            gate.set_active_map(fie.commander.blueprints()["Keymaps"]["Yank"].materialize())
     
 class Yank_Next(WriteCommand):
     "Replaces the current yank attempt with the next member of the kill ring."
@@ -512,6 +508,7 @@ class Yank_Pop(WriteCommand):
         gate.set_active_map(gate.primary_map())
         ring = fie.commander.ring()
         ring.remove(ring.index())
+        print(ring._members)
 
 class Yank_Place(WriteCommand):
     "Confirm placement of current yank attempt, allowing it to remain in the kill ring."
@@ -529,7 +526,13 @@ class Yank_Cancel(WriteCommand):
         point = cursor.point()
         # deletes last yank attempt
         current = ring.get()
-        start_of_current = point - len(current)
+        start_of_current = point - current.length()
         gate.selection(start_of_current, point, remove=True)
         # resets keymap
         gate.set_active_map(gate.primary_map())
+
+###### IMPORTS ######        
+from Control.Interfaces import Fragment, Region
+from copy import deepcopy
+
+        

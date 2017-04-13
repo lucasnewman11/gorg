@@ -4,8 +4,8 @@ from PyQt4 import QtGui
 import Data.Stores
 import View.Frames
 import Control.Core
-import Control.Keymaps
 import Control.Interfaces
+import Control.Blueprints
 
 # creates a gorg directory object which points to an existing directory of JSON gorg data
 gorg_directory = Data.Stores.JSONDir("/Users/amodeo/Dropbox/gorg-data/")
@@ -19,11 +19,9 @@ gorg_network = gorg_directory.getlast()
 # current app 
 Gorg = QtGui.QApplication(sys.argv)
 
-keymaps = Control.Keymaps.make_keymaps_dict_from_file(open("Control/keymaps.txt", "r"))
-gate_blueprints = Control.Interfaces.make_gate_blueprints_dict_from_file(open("Control/gates.txt", "r"))
-interface_blueprints = Control.Interfaces.make_interface_blueprints_dict_from_file(open("Control/interfaces.txt", "r"), gate_blueprints)
+blueprints = Control.Blueprints.make_blueprint_dict_from_filepath("/Users/amodeo/Desktop/Stuff/Code/Python/gorg/Control/blueprints.txt")
 
-commander1 = Control.Core.Commander(keymaps, interface_blueprints)
+commander1 = Control.Core.Commander(blueprints)
 sys.exit(Gorg.exec_())
 
 

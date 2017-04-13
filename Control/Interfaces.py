@@ -1,13 +1,10 @@
-import config
-from Control.Blueprints import InterfaceBlueprint, GateBlueprint, RegionBlueprint
-
 class Interface():
     # The controller class responsible for facilitating the manipulation of a specific chunk of data through a specific gate.
 
     def __init__(self):
         self._name = ""
         self._parent = False
-        self._subordinate = {}
+        self._subordinates = {}
         self._order = []
         self._focus = False
         
@@ -79,7 +76,7 @@ class Gate():
     def __init__(self,
                  name="",
                  parent=False,
-                 region=Region([]),
+                 region=False,
                  read_only=False,
                  crop=False,
                  keymap=False):
@@ -166,11 +163,13 @@ class Gate():
             
     def process_full_input_event(self, fie):
         fie.gate = self
+        print(self._active_keymap, self._active_keymap.name())
         command = self._active_keymap.match_input_event(fie)
-        if self.read_only() and not command.neutral():
-            print("Target gate is read only.")
-        else:
-            command.execute(fie, config)
+        if command:
+            if self.read_only() and not command.neutral():
+                print("Target gate is read only.")
+            else:
+                command.execute(fie, config)
 
     def blueprint(self):
         # returns a blueprint version of this gate
@@ -296,6 +295,9 @@ class Region():
             num += i.length()
         return num
 
+    def __len__(self):
+        return self.length()
+
     def text(self):
         text = ""
         for i in self._fragments:
@@ -413,7 +415,6 @@ class Region():
                 self.simplify()
         # creates and returns Region
         selection_region = Region(fragments)
-
         return selection_region
         
     def simplify(self):
@@ -431,8 +432,10 @@ class Region():
                 length = len(self._fragments)
 
     def blueprint(self):
-        # returns a blueprint version of this region
-        
+        blueprint = RegionBlueprint()
+        blueprint.set_markup(markup_from_region(self))
+        return blueprint
+                
 class Fragment():
 
     def __init__(self, text="", text_properties={"color" : "black",
@@ -440,7 +443,7 @@ class Fragment():
                                             "italics": False,
                                             "underline": False}):
         self._text = text
-        self._text_properties = text_properties
+        self._text_properties = deepcopy(text_properties)
 
     def text(self):
         return self._text
@@ -477,28 +480,52 @@ class Fragment():
             raise ValueError
         self._text += fragment.text()
 
+class Keymap():
+    def __init__(self):
+        self._dict = {}
+        self._config = False
+        self._name = ""
+
+    def name(self):
+        return self._name
+
+    def set_name(self, name):
+        self._name = name
+
+    def config(self):
+        return self._config
+
+    def set_config(self, config):
+        self._config = config
+
+    def add(self, regex, command):
+        # Accepts as argument 1) a regex object, and 2) a command class.
+        self._dict[regex] = command
+
+    def match(self, string):
+        final_match = False
+        for i in self._dict:
+            if i.fullmatch(string): # method on the regex object
+                final_match = i
+        if final_match:
+            return self._dict[final_match]
+        else:
+            return False
+
+    def match_input_event(self, e):
+        return self.match(e.string)
+
+    def getdict(self):
+        return self._dict
+
+    def blueprint(self):
+        kmb = KeymapBlueprint()
+        for i in self._dict:
+            kmb.add(i.pattern, self._dict[i].name())
+        return kmb
         
-
-
-        
-        
-            
-
-    
-            
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
+import config
+from Control.Blueprints import InterfaceBlueprint, GateBlueprint, RegionBlueprint
+from Control.Markup import markup_from_region
+from copy import deepcopy
 
