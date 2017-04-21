@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class Interface():
     # The controller class responsible for facilitating the manipulation of a specific chunk of data through a specific gate.
 
@@ -86,8 +88,8 @@ class Gate():
         self._cursor = GateCursor(self)
         self._read_only = read_only
         self._crop = crop
-        self._primary_keymap = keymap
-        self._active_keymap = self._primary_keymap
+        self._keymap = keymap
+        self._excursion = {}
 
     def name(self):
         return self._name
@@ -122,17 +124,11 @@ class Gate():
     def set_crop(self, crop):
         self._crop = crop
 
-    def active_map(self):
-        return self._active_keymap
+    def keymap(self):
+        return self._keymap
 
-    def set_active_map(self, keymap):
-        self._active_keymap = keymap
-
-    def primary_map(self):
-        return self._primary_keymap
-                                
-    def set_primary_map(self, keymap):
-        self._primary_keymap = keymap
+    def set_keymap(self, keymap):
+        self._keymap = keymap
 
     def length(self):
         return self._region.length()
@@ -163,13 +159,18 @@ class Gate():
             
     def process_full_input_event(self, fie):
         fie.gate = self
-        print(self._active_keymap, self._active_keymap.name())
-        command = self._active_keymap.match_input_event(fie)
+        command = self._keymap.match_input_event(fie)
         if command:
             if self.read_only() and not command.neutral():
                 print("Target gate is read only.")
             else:
                 command.execute(fie, config)
+
+    def excursion(self):
+        self._excursion["keymap"] = self._keymap
+
+    def resume(self):
+        self._keymap = self._excursion["keymap"]
 
     def blueprint(self):
         # returns a blueprint version of this gate
@@ -284,7 +285,7 @@ class GateCursor():
 class Region():
 
     def __init__(self, fragments=[]):
-        self._fragments = fragments
+        self._fragments = deepcopy(fragments)
 
     def fragments(self):
         return self._fragments
@@ -527,5 +528,5 @@ class Keymap():
 import config
 from Control.Blueprints import InterfaceBlueprint, GateBlueprint, RegionBlueprint
 from Control.Markup import markup_from_region
-from copy import deepcopy
+
 
