@@ -17,5 +17,7 @@ Basic ideas:
     by Gate definitions, which are then referenced by Interface definitions, etc
     
 I'm writing this in Python, because that's what I know.  It's probably not the best language for it - I tried for a while
-in Elisp but eventually ran out of features.  I think a more advance Lisp would probably be ideal.
+in Elisp but eventually ran out of features.  I think a more advanced Lisp would probably be ideal.
+
+Also, I haven't been very disciplined about keeping a working version in the master branch - the repo is a bit of a mess at the moment.  Something to visit soon.
     
